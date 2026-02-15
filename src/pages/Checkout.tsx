@@ -141,7 +141,7 @@ export default function Checkout() {
 
       // Open WhatsApp with the formatted message
       // Replace with the pizzaria's WhatsApp number
-      window.open(`https://wa.me/5547996930998?text=${msg}`, '_blank');
+      window.open(`https://wa.me/554796930998?text=${msg}`, '_blank');
 
       clearCart();
       toast.success('Pedido realizado com sucesso!');
