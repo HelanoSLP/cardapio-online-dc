@@ -82,27 +82,7 @@ export default function Checkout() {
     try {
       const orderTotal = total();
 
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          customer_name: form.name.trim(),
-          customer_whatsapp: form.whatsapp.trim(),
-          address_street: form.street.trim(),
-          address_number: form.number.trim(),
-          address_neighborhood: form.neighborhood.trim(),
-          address_reference: form.reference.trim() || null,
-          notes: form.notes.trim() || null,
-          payment_method: form.paymentMethod,
-          change_for: form.paymentMethod === 'cash' && form.changeFor ? parseFloat(form.changeFor) : null,
-          total: orderTotal,
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
       const orderItems = items.map((item) => ({
-        order_id: order.id,
         product_id: item.productId,
         product_name: item.name,
         quantity: item.quantity,
@@ -113,8 +93,21 @@ export default function Checkout() {
         ].filter(Boolean).join(' | ') || null,
       }));
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-      if (itemsError) throw itemsError;
+      const { data: order, error: orderError } = await supabase.rpc('create_order', {
+        p_customer_name: form.name.trim(),
+        p_customer_whatsapp: form.whatsapp.trim(),
+        p_address_street: form.street.trim(),
+        p_address_number: form.number.trim(),
+        p_address_neighborhood: form.neighborhood.trim(),
+        p_address_reference: form.reference.trim() || null,
+        p_notes: form.notes.trim() || null,
+        p_payment_method: form.paymentMethod,
+        p_change_for: form.paymentMethod === 'cash' && form.changeFor ? parseFloat(form.changeFor) : null,
+        p_total: orderTotal,
+        p_items: orderItems,
+      });
+
+      if (orderError) throw orderError;
 
       // Build WhatsApp message
       const itemsText = items
@@ -127,7 +120,7 @@ export default function Checkout() {
         .join('\n');
 
       const msg = encodeURIComponent(
-        `🍕 *NOVO PEDIDO #${order.order_number}*\n\n` +
+        `🍕 *NOVO PEDIDO #${(order as any).order_number}*\n\n` +
         `👤 *Cliente:* ${form.name}\n` +
         `📱 *WhatsApp:* ${form.whatsapp}\n\n` +
         `📍 *Endereço:*\n${form.street}, ${form.number} - ${form.neighborhood}\n` +
