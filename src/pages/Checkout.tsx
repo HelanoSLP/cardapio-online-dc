@@ -109,33 +109,6 @@ export default function Checkout() {
 
       if (orderError) throw orderError;
 
-      // Build WhatsApp message
-      const itemsText = items
-        .map((i) => {
-          let line = `• ${i.quantity}x ${i.name} - ${formatPrice(i.price * i.quantity)}`;
-          if (i.removedIngredients?.length) line += `\n  _Sem: ${i.removedIngredients.join(', ')}_`;
-          if (i.notes) line += `\n  _Obs: ${i.notes}_`;
-          return line;
-        })
-        .join('\n');
-
-      const msg = encodeURIComponent(
-        `🍕 *NOVO PEDIDO #${(order as any).order_number}*\n\n` +
-        `👤 *Cliente:* ${form.name}\n` +
-        `📱 *WhatsApp:* ${form.whatsapp}\n\n` +
-        `📍 *Endereço:*\n${form.street}, ${form.number} - ${form.neighborhood}\n` +
-        (form.reference ? `📌 *Ref:* ${form.reference}\n` : '') +
-        `\n🛒 *Itens:*\n${itemsText}\n\n` +
-        `💰 *Total: ${formatPrice(orderTotal)}*\n` +
-        `💳 *Pagamento:* ${paymentLabels[form.paymentMethod]}` +
-        (form.paymentMethod === 'cash' && form.changeFor ? `\n💵 *Troco para:* ${formatPrice(parseFloat(form.changeFor))}` : '') +
-        (form.notes ? `\n\n📝 *Obs:* ${form.notes}` : '')
-      );
-
-      // Open WhatsApp with the formatted message
-      // Replace with the pizzaria's WhatsApp number
-      window.open(`https://wa.me/554796930998?text=${msg}`, '_blank');
-
       clearCart();
       toast.success('Pedido realizado com sucesso!');
       navigate('/pedido-confirmado');

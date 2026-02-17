@@ -10,7 +10,7 @@ export default function OrderConfirmed() {
       <CheckCircle className="h-20 w-20 text-accent mb-6" />
       <h1 className="text-2xl mb-2">Pedido Confirmado! 🎉</h1>
       <p className="text-muted-foreground mb-8 max-w-sm">
-        Seu pedido foi enviado com sucesso. Acompanhe pelo WhatsApp!
+        Seu pedido foi enviado com sucesso! Você receberá atualizações pelo WhatsApp.
       </p>
       <Button onClick={() => navigate('/')} className="px-8">
         Voltar ao Cardápio
