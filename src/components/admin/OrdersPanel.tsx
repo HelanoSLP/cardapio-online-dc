@@ -111,6 +111,17 @@ export function OrdersPanel() {
 
   const updateStatus = async (orderId: string, status: string) => {
     const order = orders.find((o) => o.id === orderId);
+    
+    // Build WhatsApp URL before the async call to avoid popup blocker
+    let whatsappUrl = '';
+    if (order) {
+      const msg = getWhatsAppMessage(order, status);
+      if (msg) {
+        const phone = formatWhatsAppNumber(order.customer_whatsapp);
+        whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      }
+    }
+
     const { error } = await supabase
       .from('orders')
       .update({ status: status as any })
@@ -122,12 +133,8 @@ export function OrdersPanel() {
       fetchOrders();
 
       // Open WhatsApp with pre-formatted message to customer
-      if (order) {
-        const msg = getWhatsAppMessage(order, status);
-        if (msg) {
-          const phone = formatWhatsAppNumber(order.customer_whatsapp);
-          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
+      if (whatsappUrl) {
+        window.open(whatsappUrl, '_blank');
       }
     }
   };
