@@ -93,7 +93,24 @@ export function OrdersPanel() {
     };
   }, [filter]);
 
+  const getWhatsAppMessage = (order: Order, status: string): string => {
+    const statusMessages: Record<string, string> = {
+      received: `✅ Olá ${order.customer_name}! Seu pedido #${order.order_number} foi recebido com sucesso! Em breve começaremos a preparar. 😊`,
+      preparing: `👨‍🍳 Olá ${order.customer_name}! Seu pedido #${order.order_number} já está sendo preparado! 🍕`,
+      out_for_delivery: `🛵 Olá ${order.customer_name}! Seu pedido #${order.order_number} saiu para entrega! Aguarde em breve! 📦`,
+      delivered: `🎉 Olá ${order.customer_name}! Seu pedido #${order.order_number} foi entregue! Bom apetite! 😋🍕`,
+    };
+    return statusMessages[status] || '';
+  };
+
+  const formatWhatsAppNumber = (phone: string): string => {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.startsWith('55')) return digits;
+    return `55${digits}`;
+  };
+
   const updateStatus = async (orderId: string, status: string) => {
+    const order = orders.find((o) => o.id === orderId);
     const { error } = await supabase
       .from('orders')
       .update({ status: status as any })
@@ -103,6 +120,15 @@ export function OrdersPanel() {
     } else {
       toast.success('Status atualizado');
       fetchOrders();
+
+      // Open WhatsApp with pre-formatted message to customer
+      if (order) {
+        const msg = getWhatsAppMessage(order, status);
+        if (msg) {
+          const phone = formatWhatsAppNumber(order.customer_whatsapp);
+          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      }
     }
   };
 
