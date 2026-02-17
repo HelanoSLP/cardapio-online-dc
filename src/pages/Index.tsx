@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useCategories, useProducts } from '@/hooks/useMenu';
+import { useState, useMemo } from 'react';
+import { useCategories, useProducts, useCategoryBarItems, CATEGORY_GROUPS } from '@/hooks/useMenu';
 import { CategoryBar } from '@/components/menu/CategoryBar';
 import { ProductCard } from '@/components/menu/ProductCard';
 import { CartFloatingButton } from '@/components/cart/CartFloatingButton';
@@ -7,9 +7,34 @@ import { CartDrawer } from '@/components/cart/CartDrawer';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
-  const [activeCategory, setActiveCategory] = useState<string | undefined>();
+  const [activeKey, setActiveKey] = useState<string | undefined>();
   const { data: categories, isLoading: loadingCategories } = useCategories();
-  const { data: products, isLoading: loadingProducts } = useProducts(activeCategory);
+  const barItems = useCategoryBarItems(categories);
+
+  // Resolve active key to slugs
+  const activeSlugs = useMemo(() => {
+    if (!activeKey) return undefined;
+    const item = barItems.find((i) => i.key === activeKey);
+    return item?.slugs;
+  }, [activeKey, barItems]);
+
+  const { data: products, isLoading: loadingProducts } = useProducts(activeSlugs);
+
+  // Group products by subcategory when viewing a group with multiple slugs
+  const isGrouped = activeSlugs && activeSlugs.length > 1;
+  const groupedProducts = useMemo(() => {
+    if (!isGrouped || !products) return null;
+    const groups: Record<string, typeof products> = {};
+    for (const p of products) {
+      const catName = p.categories.name;
+      if (!groups[catName]) groups[catName] = [];
+      groups[catName].push(p);
+    }
+    // Sort groups by category sort_order
+    return Object.entries(groups).sort(
+      (a, b) => (a[1][0]?.categories.sort_order ?? 0) - (b[1][0]?.categories.sort_order ?? 0)
+    );
+  }, [isGrouped, products]);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -30,9 +55,9 @@ const Index = () => {
             </div>
           ) : (
             <CategoryBar
-              categories={categories || []}
-              active={activeCategory}
-              onSelect={setActiveCategory}
+              items={barItems}
+              active={activeKey}
+              onSelect={setActiveKey}
             />
           )}
         </div>
@@ -43,6 +68,19 @@ const Index = () => {
         {loadingProducts ? (
           <div className="grid grid-cols-1 gap-3">
             {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          </div>
+        ) : groupedProducts ? (
+          <div className="space-y-6">
+            {groupedProducts.map(([catName, items]) => (
+              <div key={catName}>
+                <h2 className="text-lg font-bold text-foreground mb-3">{catName}</h2>
+                <div className="grid grid-cols-1 gap-3">
+                  {items.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
