@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useCategories, useProducts, useCategoryBarItems, CATEGORY_GROUPS } from '@/hooks/useMenu';
+import { useCategories, useProducts, useCategoryBarItems } from '@/hooks/useMenu';
 import { CategoryBar } from '@/components/menu/CategoryBar';
 import { ProductCard } from '@/components/menu/ProductCard';
 import { CartFloatingButton } from '@/components/cart/CartFloatingButton';
@@ -11,7 +11,6 @@ const Index = () => {
   const { data: categories, isLoading: loadingCategories } = useCategories();
   const barItems = useCategoryBarItems(categories);
 
-  // Resolve active key to slugs
   const activeSlugs = useMemo(() => {
     if (!activeKey) return undefined;
     const item = barItems.find((i) => i.key === activeKey);
@@ -20,7 +19,6 @@ const Index = () => {
 
   const { data: products, isLoading: loadingProducts } = useProducts(activeSlugs);
 
-  // Group products by subcategory when viewing a group with multiple slugs
   const isGrouped = activeSlugs && activeSlugs.length > 1;
   const groupedProducts = useMemo(() => {
     if (!isGrouped || !products) return null;
@@ -30,7 +28,6 @@ const Index = () => {
       if (!groups[catName]) groups[catName] = [];
       groups[catName].push(p);
     }
-    // Sort groups by category sort_order
     return Object.entries(groups).sort(
       (a, b) => (a[1][0]?.categories.sort_order ?? 0) - (b[1][0]?.categories.sort_order ?? 0)
     );
@@ -39,15 +36,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
-        <div className="mx-auto max-w-lg px-4 py-4">
-          <h1 className="text-2xl tracking-tight">🍕 Pizzaria Delícia</h1>
+      <header className="sticky top-0 z-40 bg-primary text-primary-foreground emoji-rain">
+        <div className="relative z-10 mx-auto max-w-lg px-4 py-5">
+          <h1 className="text-2xl tracking-tight">😋 Delícias Caseiras</h1>
           <p className="text-sm opacity-80">Peça pelo cardápio digital</p>
         </div>
       </header>
 
       {/* Categories */}
-      <div className="sticky top-[72px] z-30 bg-background/95 backdrop-blur-sm border-b">
+      <div className="sticky top-[80px] z-30 bg-background/95 backdrop-blur-sm border-b">
         <div className="mx-auto max-w-lg">
           {loadingCategories ? (
             <div className="flex gap-2 p-3 overflow-x-auto">
@@ -76,7 +73,7 @@ const Index = () => {
                 <h2 className="text-lg font-bold text-foreground mb-3">{catName}</h2>
                 <div className="grid grid-cols-1 gap-3">
                   {items.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} categories={categories} />
                   ))}
                 </div>
               </div>
@@ -85,7 +82,7 @@ const Index = () => {
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {products?.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} categories={categories} />
             ))}
             {products?.length === 0 && (
               <p className="text-center text-muted-foreground py-12">
