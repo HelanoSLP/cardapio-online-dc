@@ -24,11 +24,24 @@ const paymentLabels: Record<string, string> = {
   pix: '📱 Pix',
 };
 
+const sendWhatsApp = async (phone: string, message: string) => {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-whatsapp', {
+      body: { phone, message },
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'Failed');
+    return true;
+  } catch (err) {
+    console.error('WhatsApp send error:', err);
+    return false;
+  }
+};
+
 export function OrdersPanel() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [filter, setFilter] = useState<string>('all');
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
@@ -53,13 +66,9 @@ export function OrdersPanel() {
     const { data } = await query;
     if (data) {
       setOrders(data);
-      // Fetch items for all orders
       const ids = data.map((o) => o.id);
       if (ids.length > 0) {
-        const { data: items } = await supabase
-          .from('order_items')
-          .select('*')
-          .in('order_id', ids);
+        const { data: items } = await supabase.from('order_items').select('*').in('order_id', ids);
         if (items) {
           const grouped: Record<string, OrderItem[]> = {};
           items.forEach((item) => {
@@ -74,13 +83,10 @@ export function OrdersPanel() {
 
   useEffect(() => {
     fetchOrders();
-
-    // Realtime subscription for new orders
     const channel = supabase
       .channel('orders-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
         fetchOrders();
-        // Play notification sound for new orders
         try {
           const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbsGY/Oj+Yx+mxYjU3R5e/4LNfOj1Ik7/drV08RFiPv+CsYEBDVJW+3KtiQz5DV5K73KVfPz1EWpG+2qJdOjxCX5e716FeNzdBaZ633KxeNjdAaJ+43axfNjZBaZ+43a5hOjlEap+43K1fNjhDap+43K1fNjhDap+43K1fNjhDap+43K1fNjhD');
           audio.play().catch(() => {});
@@ -88,9 +94,7 @@ export function OrdersPanel() {
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [filter]);
 
   const getWhatsAppMessage = (order: Order, status: string): string => {
@@ -103,38 +107,31 @@ export function OrdersPanel() {
     return statusMessages[status] || '';
   };
 
-  const formatWhatsAppNumber = (phone: string): string => {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.startsWith('55')) return digits;
-    return `55${digits}`;
-  };
-
   const updateStatus = async (orderId: string, status: string) => {
     const order = orders.find((o) => o.id === orderId);
-    
-    // Build WhatsApp URL before the async call to avoid popup blocker
-    let whatsappUrl = '';
-    if (order) {
-      const msg = getWhatsAppMessage(order, status);
-      if (msg) {
-        const phone = formatWhatsAppNumber(order.customer_whatsapp);
-        whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-      }
-    }
 
     const { error } = await supabase
       .from('orders')
       .update({ status: status as any })
       .eq('id', orderId);
+
     if (error) {
       toast.error('Erro ao atualizar status');
     } else {
       toast.success('Status atualizado');
       fetchOrders();
 
-      // Open WhatsApp with pre-formatted message to customer
-      if (whatsappUrl) {
-        window.open(whatsappUrl, '_blank');
+      // Send WhatsApp notification automatically via Z-API
+      if (order) {
+        const msg = getWhatsAppMessage(order, status);
+        if (msg) {
+          const sent = await sendWhatsApp(order.customer_whatsapp, msg);
+          if (sent) {
+            toast.success('Notificação WhatsApp enviada ao cliente');
+          } else {
+            toast.error('Erro ao enviar WhatsApp. Verifique as credenciais Z-API.');
+          }
+        }
       }
     }
   };
@@ -154,7 +151,7 @@ export function OrdersPanel() {
         .total { font-size: 14px; font-weight: bold; }
         .notes { font-style: italic; font-size: 11px; margin-left: 10px; }
       </style></head><body>
-      <h1>🍕 Pizzaria Delícia</h1>
+      <h1>😋 Delícias Caseiras</h1>
       <p style="text-align:center">Pedido #${order.order_number}</p>
       <p style="text-align:center">${formatDate(order.created_at)}</p>
       <hr/>
@@ -180,13 +177,10 @@ export function OrdersPanel() {
     printWindow.document.close();
   };
 
-  const todayTotal = orders
-    .filter((o) => o.status !== 'received' || true)
-    .reduce((sum, o) => sum + Number(o.total), 0);
+  const todayTotal = orders.reduce((sum, o) => sum + Number(o.total), 0);
 
   return (
     <div className="space-y-4 mt-4">
-      {/* Summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-xl border bg-card p-3 text-center">
           <p className="text-2xl font-bold">{orders.length}</p>
@@ -206,11 +200,8 @@ export function OrdersPanel() {
         </div>
       </div>
 
-      {/* Filter */}
       <Select value={filter} onValueChange={setFilter}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Filtrar por status" />
-        </SelectTrigger>
+        <SelectTrigger className="w-48"><SelectValue placeholder="Filtrar por status" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos</SelectItem>
           <SelectItem value="received">Recebido</SelectItem>
@@ -220,7 +211,6 @@ export function OrdersPanel() {
         </SelectContent>
       </Select>
 
-      {/* Orders */}
       {orders.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">Nenhum pedido encontrado</p>
       ) : (
@@ -264,9 +254,7 @@ export function OrdersPanel() {
 
               <div className="flex gap-2 flex-wrap">
                 <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
-                  <SelectTrigger className="w-44 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="received">🟡 Recebido</SelectItem>
                     <SelectItem value="preparing">🟠 Em Preparo</SelectItem>

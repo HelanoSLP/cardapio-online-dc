@@ -109,6 +109,20 @@ export default function Checkout() {
 
       if (orderError) throw orderError;
 
+      // Send confirmation WhatsApp to customer
+      try {
+        const orderData = order as { order_number?: number } | null;
+        const orderNum = orderData?.order_number || '';
+        await supabase.functions.invoke('send-whatsapp', {
+          body: {
+            phone: form.whatsapp.trim(),
+            message: `✅ Olá ${form.name.trim()}! Seu pedido #${orderNum} foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n📍 Entrega: ${form.street.trim()}, ${form.number.trim()} - ${form.neighborhood.trim()}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher Delícias Caseiras! 😋`,
+          },
+        });
+      } catch (e) {
+        console.error('WhatsApp confirmation error:', e);
+      }
+
       clearCart();
       toast.success('Pedido realizado com sucesso!');
       navigate('/pedido-confirmado');

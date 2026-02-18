@@ -109,6 +109,25 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .emoji-rain {
+    position: relative;
+    overflow: hidden;
+  }
+  .emoji-rain::before {
+    content: '🍕🍔🌭🍕🍟🍕🌯🍕🍔🍕🌭🍕🍟🍕🌯🍕🍔🍕🌭🍕🍟🍕🌯🍕🍔🍕🌭🍕🍟🍕🌯🍕';
+    position: absolute;
+    inset: 0;
+    font-size: 1.2rem;
+    line-height: 1.8;
+    letter-spacing: 0.3rem;
+    word-spacing: 0.2rem;
+    opacity: 0.15;
+    pointer-events: none;
+    white-space: normal;
+    overflow: hidden;
+    z-index: 0;
+  }
 }
 
 @media print {

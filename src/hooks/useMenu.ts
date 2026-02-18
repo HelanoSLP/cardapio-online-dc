@@ -2,25 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 
-export type Category = Tables<'categories'>;
+export type Category = Tables<'categories'> & { parent_id?: string | null };
 export type Product = Tables<'products'>;
-
-// Category group definitions
-export interface CategoryGroup {
-  label: string;
-  icon: string;
-  slugs: string[];
-}
-
-export const CATEGORY_GROUPS: Record<string, CategoryGroup> = {
-  pizzas: { label: 'Pizzas', icon: '🍕', slugs: ['pizzas', 'pizzas-doces'] },
-  bebidas: { label: 'Bebidas', icon: '🥤', slugs: ['refrigerantes', 'sucos'] },
-};
-
-// Slugs that are part of a group (should not appear individually)
-const GROUPED_SLUGS = new Set(
-  Object.values(CATEGORY_GROUPS).flatMap((g) => g.slugs)
-);
 
 export function useCategories() {
   return useQuery({
@@ -37,41 +20,65 @@ export function useCategories() {
   });
 }
 
-/** Build the list of items to show in the category bar */
+/** Build category bar items using parent_id relationships */
 export function useCategoryBarItems(categories: Category[] | undefined) {
   if (!categories) return [];
 
-  const items: { key: string; label: string; icon: string; slugs: string[] }[] = [];
-  const addedGroups = new Set<string>();
+  const items: { key: string; label: string; icon: string; slugs: string[]; isParent: boolean }[] = [];
 
-  for (const cat of categories) {
-    // Check if this category belongs to a group
-    const groupKey = Object.entries(CATEGORY_GROUPS).find(([, g]) =>
-      g.slugs.includes(cat.slug)
-    );
+  // Find parent categories (no parent_id) that have children
+  const parents = categories.filter((c) => !c.parent_id);
+  const children = categories.filter((c) => c.parent_id);
 
-    if (groupKey) {
-      if (!addedGroups.has(groupKey[0])) {
-        addedGroups.add(groupKey[0]);
-        items.push({
-          key: groupKey[0],
-          label: groupKey[1].label,
-          icon: groupKey[1].icon,
-          slugs: groupKey[1].slugs,
-        });
-      }
+  for (const cat of parents) {
+    const childCats = children.filter((c) => c.parent_id === cat.id);
+    if (childCats.length > 0) {
+      // This is a group - show parent label, slugs are the children's slugs
+      items.push({
+        key: cat.slug,
+        label: cat.name,
+        icon: cat.icon || '',
+        slugs: childCats.map((c) => c.slug),
+        isParent: true,
+      });
     } else {
+      // Standalone category
       items.push({
         key: cat.slug,
         label: cat.name,
         icon: cat.icon || '',
         slugs: [cat.slug],
+        isParent: false,
       });
     }
   }
 
   return items;
 }
+
+/** Check if a category slug belongs to a pizza category */
+export function isPizzaCategory(categories: Category[] | undefined, categoryId: string): boolean {
+  if (!categories) return false;
+  const cat = categories.find((c) => c.id === categoryId);
+  if (!cat) return false;
+  // Check if the category or its parent has "pizza" in the slug
+  const slug = cat.slug.toLowerCase();
+  if (slug.includes('pizza')) return true;
+  if (cat.parent_id) {
+    const parent = categories.find((c) => c.id === cat.parent_id);
+    if (parent && parent.slug.toLowerCase().includes('pizza')) return true;
+  }
+  return false;
+}
+
+export const PIZZA_SIZES = [
+  { key: 'small', label: 'Pequena', maxFlavors: 2 },
+  { key: 'medium', label: 'Média', maxFlavors: 3 },
+  { key: 'large', label: 'Grande', maxFlavors: 4 },
+  { key: 'giant', label: 'Gigante', maxFlavors: 4 },
+] as const;
+
+export type PizzaSize = typeof PIZZA_SIZES[number]['key'];
 
 export function useProducts(categorySlugs?: string[]) {
   return useQuery({
