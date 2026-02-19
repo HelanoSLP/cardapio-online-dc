@@ -170,21 +170,6 @@ export default function Checkout() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4 space-y-6 pb-32">
-        {/* Order summary */}
-        <section className="rounded-xl border bg-card p-4">
-          <h2 className="text-base font-bold mb-3">Resumo do Pedido</h2>
-          {items.map((item, idx) => (
-            <div key={idx} className="flex justify-between text-sm py-1">
-              <span>{item.quantity}x {item.name}</span>
-              <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
-            </div>
-          ))}
-          <div className="flex justify-between font-bold text-lg mt-3 pt-3 border-t">
-            <span>Total</span>
-            <span className="text-primary">{formatPrice(total())}</span>
-          </div>
-        </section>
-
         {/* Delivery type */}
         <section className="space-y-3">
           <h2 className="text-base font-bold">Como deseja receber?</h2>
@@ -217,6 +202,23 @@ export default function Checkout() {
             </button>
           </div>
         </section>
+
+        {/* Order summary */}
+        <section className="rounded-xl border bg-card p-4">
+          <h2 className="text-base font-bold mb-3">Resumo do Pedido</h2>
+          {items.map((item, idx) => (
+            <div key={idx} className="flex justify-between text-sm py-1">
+              <span>{item.quantity}x {item.name}</span>
+              <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+            </div>
+          ))}
+          <div className="flex justify-between font-bold text-lg mt-3 pt-3 border-t">
+            <span>Total</span>
+            <span className="text-primary">{formatPrice(total())}</span>
+          </div>
+        </section>
+
+
 
         {/* Customer info */}
         <section className="space-y-4">
