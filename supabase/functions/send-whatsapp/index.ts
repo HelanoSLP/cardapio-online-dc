@@ -36,9 +36,6 @@ Deno.serve(async (req) => {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    if (ZAPI_CLIENT_TOKEN) {
-      headers['Client-Token'] = ZAPI_CLIENT_TOKEN;
-    }
 
     const response = await fetch(zapiUrl, {
       method: 'POST',
