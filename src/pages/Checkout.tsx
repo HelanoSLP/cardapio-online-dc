@@ -215,9 +215,27 @@ export default function Checkout() {
               <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
             </div>
           ))}
-          <div className="flex justify-between font-bold text-lg mt-3 pt-3 border-t">
-            <span>Total</span>
-            <span className="text-primary">{formatPrice(total())}</span>
+          <div className="border-t mt-3 pt-3 space-y-1">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>{formatPrice(total())}</span>
+            </div>
+            {deliveryType === 'delivery' && (
+              <div className="flex justify-between text-sm">
+                <span>🛵 Taxa de entrega</span>
+                <span>{formatPrice(DELIVERY_FEE)}</span>
+              </div>
+            )}
+            {deliveryType === 'pickup' && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>🏪 Retirada</span>
+                <span>Grátis</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-lg pt-2 border-t">
+              <span>Total</span>
+              <span className="text-primary">{formatPrice(deliveryType === 'delivery' ? total() + DELIVERY_FEE : total())}</span>
+            </div>
           </div>
         </section>
 
