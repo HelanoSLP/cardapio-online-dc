@@ -97,7 +97,8 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      const orderTotal = total();
+      const subtotal = total();
+      const orderTotal = deliveryType === 'delivery' ? subtotal + DELIVERY_FEE : subtotal;
 
       const orderItems = items.map((item) => ({
         product_id: item.productId,
