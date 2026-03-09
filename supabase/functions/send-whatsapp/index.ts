@@ -37,6 +37,10 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     };
 
+    if (ZAPI_CLIENT_TOKEN) {
+      headers['Client-Token'] = ZAPI_CLIENT_TOKEN;
+    }
+
     const response = await fetch(zapiUrl, {
       method: 'POST',
       headers,
