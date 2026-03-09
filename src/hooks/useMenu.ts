@@ -61,7 +61,6 @@ export function isPizzaCategory(categories: Category[] | undefined, categoryId: 
   if (!categories) return false;
   const cat = categories.find((c) => c.id === categoryId);
   if (!cat) return false;
-  // Check if the category or its parent has "pizza" in the slug
   const slug = cat.slug.toLowerCase();
   if (slug.includes('pizza')) return true;
   if (cat.parent_id) {
@@ -69,6 +68,46 @@ export function isPizzaCategory(categories: Category[] | undefined, categoryId: 
     if (parent && parent.slug.toLowerCase().includes('pizza')) return true;
   }
   return false;
+}
+
+/** Check if a category is a combo category */
+export function isComboCategory(categories: Category[] | undefined, categoryId: string): boolean {
+  if (!categories) return false;
+  const cat = categories.find((c) => c.id === categoryId);
+  if (!cat) return false;
+  const slug = cat.slug.toLowerCase();
+  if (slug.includes('combo')) return true;
+  if (cat.parent_id) {
+    const parent = categories.find((c) => c.id === cat.parent_id);
+    if (parent && parent.slug.toLowerCase().includes('combo')) return true;
+  }
+  return false;
+}
+
+/** Detect pizza size from product name (for combos) */
+export function detectPizzaSizeFromName(name: string): PizzaSize | null {
+  const lower = name.toLowerCase();
+  if (lower.includes('gigante')) return 'giant';
+  if (lower.includes('grande')) return 'large';
+  if (lower.includes('média') || lower.includes('media')) return 'medium';
+  if (lower.includes('pequena')) return 'small';
+  return null;
+}
+
+/** Get all pizza category IDs */
+export function getPizzaCategoryIds(categories: Category[] | undefined): string[] {
+  if (!categories) return [];
+  return categories
+    .filter((c) => {
+      const slug = c.slug.toLowerCase();
+      if (slug.includes('pizza')) return true;
+      if (c.parent_id) {
+        const parent = categories.find((p) => p.id === c.parent_id);
+        if (parent && parent.slug.toLowerCase().includes('pizza')) return true;
+      }
+      return false;
+    })
+    .map((c) => c.id);
 }
 
 export const PIZZA_SIZES = [

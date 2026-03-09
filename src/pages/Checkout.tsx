@@ -14,6 +14,8 @@ import { z } from 'zod';
 type DeliveryType = 'delivery' | 'pickup';
 type PaymentMethod = 'cash' | 'card_debit' | 'card_credit' | 'pix';
 
+const DELIVERY_FEE = 7;
+
 const baseSchema = {
   name: z.string().trim().min(2, 'Nome é obrigatório').max(100),
   whatsapp: z.string().trim().min(10, 'WhatsApp inválido').max(20),
@@ -95,7 +97,8 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      const orderTotal = total();
+      const subtotal = total();
+      const orderTotal = deliveryType === 'delivery' ? subtotal + DELIVERY_FEE : subtotal;
 
       const orderItems = items.map((item) => ({
         product_id: item.productId,
@@ -212,9 +215,27 @@ export default function Checkout() {
               <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
             </div>
           ))}
-          <div className="flex justify-between font-bold text-lg mt-3 pt-3 border-t">
-            <span>Total</span>
-            <span className="text-primary">{formatPrice(total())}</span>
+          <div className="border-t mt-3 pt-3 space-y-1">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>{formatPrice(total())}</span>
+            </div>
+            {deliveryType === 'delivery' && (
+              <div className="flex justify-between text-sm">
+                <span>🛵 Taxa de entrega</span>
+                <span>{formatPrice(DELIVERY_FEE)}</span>
+              </div>
+            )}
+            {deliveryType === 'pickup' && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>🏪 Retirada</span>
+                <span>Grátis</span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-lg pt-2 border-t">
+              <span>Total</span>
+              <span className="text-primary">{formatPrice(deliveryType === 'delivery' ? total() + DELIVERY_FEE : total())}</span>
+            </div>
           </div>
         </section>
 
@@ -307,7 +328,7 @@ export default function Checkout() {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t p-4">
         <div className="mx-auto max-w-lg">
           <Button className="w-full py-5 text-base" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Enviando...' : `Confirmar Pedido - ${formatPrice(total())}`}
+            {loading ? 'Enviando...' : `Confirmar Pedido - ${formatPrice(deliveryType === 'delivery' ? total() + DELIVERY_FEE : total())}`}
           </Button>
         </div>
       </div>

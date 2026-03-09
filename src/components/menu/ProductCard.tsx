@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Product, Category, isPizzaCategory, PIZZA_SIZES, PizzaSize } from '@/hooks/useMenu';
+import { Product, Category, isPizzaCategory, isComboCategory, detectPizzaSizeFromName, getPizzaCategoryIds, PIZZA_SIZES, PizzaSize } from '@/hooks/useMenu';
 import { useCartStore } from '@/stores/cartStore';
 import { Plus, Minus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,36 +30,87 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     [categories, product.category_id]
   );
 
-  // Fetch sibling pizza products for flavor selection
-  const { data: siblingProducts } = useQuery({
-    queryKey: ['sibling-products', product.category_id],
+  const isCombo = useMemo(
+    () => isComboCategory(categories, product.category_id),
+    [categories, product.category_id]
+  );
+
+  // For combos, detect if the product name mentions a pizza size
+  const comboDetectedSize = useMemo(() => {
+    if (!isCombo) return null;
+    return detectPizzaSizeFromName(product.name);
+  }, [isCombo, product.name]);
+
+  // Combo has pizza if a size was detected in its name
+  const comboHasPizza = isCombo && comboDetectedSize !== null;
+
+  // For combos with pizza, allow size selection starting from detected size
+  // or just use detected size directly
+  const effectiveSize = isPizza ? selectedSize : comboDetectedSize;
+  const maxFlavors = effectiveSize
+    ? PIZZA_SIZES.find((s) => s.key === effectiveSize)?.maxFlavors || 1
+    : 1;
+
+  // Get pizza category IDs for fetching flavors (for combos)
+  const pizzaCategoryIds = useMemo(
+    () => getPizzaCategoryIds(categories),
+    [categories]
+  );
+
+  // Fetch sibling products for flavor selection (pizza: same category, combo: all pizza products)
+  const flavorCategoryIds = isPizza ? [product.category_id] : pizzaCategoryIds;
+  const { data: flavorProducts } = useQuery({
+    queryKey: ['flavor-products', flavorCategoryIds],
     queryFn: async () => {
+      if (flavorCategoryIds.length === 0) return [];
       const { data } = await supabase
         .from('products')
-        .select('id, name')
-        .eq('category_id', product.category_id)
+        .select('id, name, ingredients')
+        .in('category_id', flavorCategoryIds)
         .eq('active', true)
         .order('sort_order');
       return data || [];
     },
-    enabled: isPizza && open,
+    enabled: (isPizza || comboHasPizza) && open,
   });
 
-  const maxFlavors = selectedSize
-    ? PIZZA_SIZES.find((s) => s.key === selectedSize)?.maxFlavors || 1
-    : 1;
+  const showSizeSelector = isPizza;
+  const showFlavorSelector = (isPizza && selectedSize && flavorProducts && flavorProducts.length > 1) ||
+    (comboHasPizza && flavorProducts && flavorProducts.length > 1);
+  const showIngredientRemoval = product.ingredients && product.ingredients.length > 0;
+
+  // For combos with pizza, gather ingredients from selected flavors
+  const comboFlavorIngredients = useMemo(() => {
+    if (!comboHasPizza || !flavorProducts || selectedFlavors.length === 0) return [];
+    const allIngredients = new Set<string>();
+    for (const flavor of selectedFlavors) {
+      const fp = flavorProducts.find((p) => p.name === flavor);
+      if (fp?.ingredients) {
+        for (const ing of fp.ingredients as string[]) {
+          allIngredients.add(ing);
+        }
+      }
+    }
+    return Array.from(allIngredients).sort();
+  }, [comboHasPizza, flavorProducts, selectedFlavors]);
+
+  const availableIngredients = comboHasPizza && selectedFlavors.length > 0
+    ? comboFlavorIngredients
+    : (product.ingredients || []);
 
   const handleAdd = () => {
     const flavorNames = selectedFlavors.length > 1
       ? selectedFlavors.join(' / ')
-      : undefined;
-    const sizeLabel = selectedSize
-      ? PIZZA_SIZES.find((s) => s.key === selectedSize)?.label
+      : selectedFlavors.length === 1
+        ? selectedFlavors[0]
+        : undefined;
+    const sizeLabel = effectiveSize
+      ? PIZZA_SIZES.find((s) => s.key === effectiveSize)?.label
       : undefined;
 
     const displayName = [
       product.name,
-      sizeLabel ? `(${sizeLabel})` : '',
+      isPizza && sizeLabel ? `(${sizeLabel})` : '',
       flavorNames ? `- ${flavorNames}` : '',
     ].filter(Boolean).join(' ');
 
@@ -104,6 +155,8 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
+  const canAdd = isPizza ? !!selectedSize : true;
+
   return (
     <>
       <button
@@ -135,8 +188,8 @@ export function ProductCard({ product, categories }: ProductCardProps) {
           <p className="text-sm text-muted-foreground">{product.description}</p>
           <p className="font-bold text-primary text-xl">{formatPrice(product.price)}</p>
 
-          {/* Pizza Size Selection */}
-          {isPizza && (
+          {/* Pizza Size Selection (only for direct pizza products) */}
+          {showSizeSelector && (
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
               <div className="grid grid-cols-2 gap-2">
@@ -146,6 +199,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
                     onClick={() => {
                       setSelectedSize(size.key);
                       setSelectedFlavors([]);
+                      setRemovedIngredients([]);
                     }}
                     className={cn(
                       'rounded-lg border p-2 text-sm font-medium transition-colors text-center',
@@ -162,14 +216,23 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             </div>
           )}
 
+          {/* Combo pizza info */}
+          {comboHasPizza && (
+            <div className="rounded-lg bg-accent/30 p-3">
+              <p className="text-sm font-medium">
+                🍕 Pizza {PIZZA_SIZES.find((s) => s.key === comboDetectedSize)?.label} — até {maxFlavors} sabores
+              </p>
+            </div>
+          )}
+
           {/* Multi-flavor Selection */}
-          {isPizza && selectedSize && siblingProducts && siblingProducts.length > 1 && (
+          {showFlavorSelector && (
             <div>
               <p className="text-sm font-medium mb-2">
                 Sabores (escolha até {maxFlavors}):
               </p>
               <div className="space-y-1 max-h-40 overflow-y-auto">
-                {siblingProducts.map((sp) => {
+                {flavorProducts!.map((sp) => {
                   const isSelected = selectedFlavors.includes(sp.name);
                   return (
                     <button
@@ -197,11 +260,12 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             </div>
           )}
 
-          {product.ingredients && product.ingredients.length > 0 && (
+          {/* Ingredient removal */}
+          {availableIngredients.length > 0 && (
             <div>
               <p className="text-sm font-medium mb-2">Remover ingredientes:</p>
               <div className="grid grid-cols-2 gap-2">
-                {product.ingredients.map((ing) => (
+                {availableIngredients.map((ing) => (
                   <label key={ing} className="flex items-center gap-2 text-sm cursor-pointer">
                     <Checkbox
                       checked={removedIngredients.includes(ing)}
@@ -238,9 +302,9 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <Button
               onClick={handleAdd}
               className="w-full text-base py-5"
-              disabled={isPizza && !selectedSize}
+              disabled={!canAdd}
             >
-              {isPizza && !selectedSize
+              {!canAdd
                 ? 'Selecione um tamanho'
                 : `Adicionar ${formatPrice(product.price * quantity)}`}
             </Button>
