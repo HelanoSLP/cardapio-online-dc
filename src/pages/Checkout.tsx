@@ -14,6 +14,8 @@ import { z } from 'zod';
 type DeliveryType = 'delivery' | 'pickup';
 type PaymentMethod = 'cash' | 'card_debit' | 'card_credit' | 'pix';
 
+const DELIVERY_FEE = 7;
+
 const baseSchema = {
   name: z.string().trim().min(2, 'Nome é obrigatório').max(100),
   whatsapp: z.string().trim().min(10, 'WhatsApp inválido').max(20),
