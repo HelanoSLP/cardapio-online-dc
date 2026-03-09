@@ -328,7 +328,7 @@ export default function Checkout() {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t p-4">
         <div className="mx-auto max-w-lg">
           <Button className="w-full py-5 text-base" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Enviando...' : `Confirmar Pedido - ${formatPrice(total())}`}
+            {loading ? 'Enviando...' : `Confirmar Pedido - ${formatPrice(deliveryType === 'delivery' ? total() + DELIVERY_FEE : total())}`}
           </Button>
         </div>
       </div>
