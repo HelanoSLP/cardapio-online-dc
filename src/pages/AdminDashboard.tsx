@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { MenuPanel } from '@/components/admin/MenuPanel';
+import { SettingsPanel } from '@/components/admin/SettingsPanel';
+import { PromotionsPanel } from '@/components/admin/PromotionsPanel';
 import { toast } from 'sonner';
 
 export default function AdminDashboard() {
@@ -56,12 +58,20 @@ export default function AdminDashboard() {
           <TabsList className="w-full">
             <TabsTrigger value="orders" className="flex-1">Pedidos</TabsTrigger>
             <TabsTrigger value="menu" className="flex-1">Cardápio</TabsTrigger>
+            <TabsTrigger value="promos" className="flex-1">Promoções</TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1">Config</TabsTrigger>
           </TabsList>
           <TabsContent value="orders">
             <OrdersPanel />
           </TabsContent>
           <TabsContent value="menu">
             <MenuPanel />
+          </TabsContent>
+          <TabsContent value="promos">
+            <PromotionsPanel />
+          </TabsContent>
+          <TabsContent value="settings">
+            <SettingsPanel />
           </TabsContent>
         </Tabs>
       </main>

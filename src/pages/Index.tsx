@@ -1,14 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useCategories, useProducts, useCategoryBarItems } from '@/hooks/useMenu';
+import { useStoreSettings } from '@/hooks/useStoreSettings';
 import { CategoryBar } from '@/components/menu/CategoryBar';
 import { ProductCard } from '@/components/menu/ProductCard';
 import { CartFloatingButton } from '@/components/cart/CartFloatingButton';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { Skeleton } from '@/components/ui/skeleton';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 const Index = () => {
   const [activeKey, setActiveKey] = useState<string | undefined>();
   const { data: categories, isLoading: loadingCategories } = useCategories();
+  const { data: settings } = useStoreSettings();
   const barItems = useCategoryBarItems(categories);
 
   const activeSlugs = useMemo(() => {
@@ -18,6 +22,20 @@ const Index = () => {
   }, [activeKey, barItems]);
 
   const { data: products, isLoading: loadingProducts } = useProducts(activeSlugs);
+
+  // Fetch active banner promotions
+  const { data: bannerPromos } = useQuery({
+    queryKey: ['active-banners'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('type', 'banner')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+  });
 
   const isGrouped = activeSlugs && activeSlugs.length > 1;
   const groupedProducts = useMemo(() => {
@@ -33,15 +51,54 @@ const Index = () => {
     );
   }, [isGrouped, products]);
 
+  const hasBanner = settings?.banner_url && settings.banner_url.length > 0;
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-primary text-primary-foreground emoji-rain">
+      <header
+        className="sticky top-0 z-40 bg-primary text-primary-foreground emoji-rain"
+        style={hasBanner ? {
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${settings!.banner_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        } : undefined}
+      >
         <div className="relative z-10 mx-auto max-w-lg px-4 py-5">
-          <h1 className="text-2xl tracking-tight">😋 Delícias Caseiras</h1>
+          {settings?.store_name_type === 'logo' && settings.logo_url ? (
+            <img src={settings.logo_url} alt={settings.store_name} className="h-10 object-contain" />
+          ) : (
+            <h1 className="text-2xl tracking-tight">😋 {settings?.store_name || 'Delícias Caseiras'}</h1>
+          )}
           <p className="text-sm opacity-80">Peça pelo cardápio digital</p>
         </div>
       </header>
+
+      {/* Promo Banners */}
+      {bannerPromos && bannerPromos.length > 0 && (
+        <div className="mx-auto max-w-lg px-4 pt-3">
+          <div className="space-y-2">
+            {bannerPromos.map((promo: any) => (
+              <div key={promo.id} className="rounded-xl overflow-hidden border">
+                {promo.banner_image_url ? (
+                  <div className="relative">
+                    <img src={promo.banner_image_url} alt={promo.title} className="w-full h-28 object-cover" />
+                    {promo.banner_text && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-3">
+                        <p className="text-sm font-bold text-white">{promo.banner_text}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : promo.banner_text ? (
+                  <div className="bg-gradient-to-r from-primary to-secondary p-4 text-center">
+                    <p className="text-sm font-bold text-primary-foreground">{promo.banner_text}</p>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Categories */}
       <div className="sticky top-[80px] z-30 bg-background/95 backdrop-blur-sm border-b">
