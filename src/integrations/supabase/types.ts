@@ -55,6 +55,50 @@ export type Database = {
           },
         ]
       }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          customer_whatsapp: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          order_id: string | null
+          used: boolean
+          used_at: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          customer_whatsapp: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          used?: boolean
+          used_at?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          customer_whatsapp?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          order_id?: string | null
+          used?: boolean
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -206,6 +250,77 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promotions: {
+        Row: {
+          active: boolean
+          banner_image_url: string | null
+          banner_text: string | null
+          created_at: string
+          discount_type: string | null
+          discount_value: number | null
+          end_date: string | null
+          id: string
+          product_id: string | null
+          start_date: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          active?: boolean
+          banner_image_url?: string | null
+          banner_text?: string | null
+          created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
+          end_date?: string | null
+          id?: string
+          product_id?: string | null
+          start_date?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          active?: boolean
+          banner_image_url?: string | null
+          banner_text?: string | null
+          created_at?: string
+          discount_type?: string | null
+          discount_value?: number | null
+          end_date?: string | null
+          id?: string
+          product_id?: string | null
+          start_date?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
