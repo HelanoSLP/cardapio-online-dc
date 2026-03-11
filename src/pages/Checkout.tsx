@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/stores/cartStore';
+import { useStoreSettings } from '@/hooks/useStoreSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, MapPin, Store } from 'lucide-react';
+import { ArrowLeft, MapPin, Store, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
 type DeliveryType = 'delivery' | 'pickup';
 type PaymentMethod = 'cash' | 'card_debit' | 'card_credit' | 'pix';
-
-const DELIVERY_FEE = 7;
 
 const baseSchema = {
   name: z.string().trim().min(2, 'Nome é obrigatório').max(100),
@@ -50,9 +49,16 @@ const paymentLabels: Record<PaymentMethod, string> = {
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCartStore();
+  const { data: settings } = useStoreSettings();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('delivery');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponId, setCouponId] = useState<string | null>(null);
+
+  const deliveryFee = settings?.delivery_fee ?? 7;
 
   const [form, setForm] = useState({
     name: '',
@@ -74,6 +80,32 @@ export default function Checkout() {
     setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) { toast.error('Digite o código do cupom'); return; }
+    const { data, error } = await supabase
+      .from('coupons')
+      .select('*')
+      .eq('code', couponCode.trim().toUpperCase())
+      .eq('used', false)
+      .maybeSingle();
+
+    if (error || !data) {
+      toast.error('Cupom inválido ou já utilizado');
+      return;
+    }
+    setCouponDiscount(Number(data.discount_value));
+    setCouponApplied(true);
+    setCouponId(data.id);
+    toast.success(`Cupom aplicado! Desconto de ${formatPrice(Number(data.discount_value))}`);
+  };
+
+  const removeCoupon = () => {
+    setCouponCode('');
+    setCouponDiscount(0);
+    setCouponApplied(false);
+    setCouponId(null);
+  };
+
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -82,6 +114,10 @@ export default function Checkout() {
       </div>
     );
   }
+
+  const subtotal = total();
+  const deliveryTotal = deliveryType === 'delivery' ? deliveryFee : 0;
+  const orderTotal = Math.max(0, subtotal + deliveryTotal - couponDiscount);
 
   const handleSubmit = async () => {
     const schema = deliveryType === 'delivery' ? deliverySchema : pickupSchema;
@@ -97,9 +133,6 @@ export default function Checkout() {
 
     setLoading(true);
     try {
-      const subtotal = total();
-      const orderTotal = deliveryType === 'delivery' ? subtotal + DELIVERY_FEE : subtotal;
-
       const orderItems = items.map((item) => ({
         product_id: item.productId,
         product_name: item.name,
@@ -114,6 +147,7 @@ export default function Checkout() {
       const isPickup = deliveryType === 'pickup';
       const notesWithType = [
         isPickup ? '🏪 RETIRADA NO LOCAL' : '',
+        couponApplied ? `🎫 Cupom: ${couponCode.toUpperCase()} (-${formatPrice(couponDiscount)})` : '',
         form.notes.trim(),
       ].filter(Boolean).join(' | ') || null;
 
@@ -133,17 +167,44 @@ export default function Checkout() {
 
       if (orderError) throw orderError;
 
-      // Send confirmation WhatsApp to customer
+      // Mark coupon as used
+      if (couponId) {
+        await supabase.from('coupons').update({ used: true, used_at: new Date().toISOString() }).eq('id', couponId);
+      }
+
+      // Generate cashback coupon if eligible
+      if (settings?.cashback_enabled && subtotal >= settings.cashback_threshold) {
+        const code = `CB${Date.now().toString(36).toUpperCase()}`;
+        await supabase.from('coupons').insert({
+          code,
+          customer_whatsapp: form.whatsapp.trim(),
+          discount_value: settings.cashback_value,
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+        // Notify about cashback via WhatsApp
+        try {
+          await supabase.functions.invoke('send-whatsapp', {
+            body: {
+              phone: form.whatsapp.trim(),
+              message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${code}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
+            },
+          });
+        } catch (e) { console.error('Cashback WhatsApp error:', e); }
+      }
+
+      // Send confirmation WhatsApp
       try {
         const orderData = order as { order_number?: number } | null;
         const orderNum = orderData?.order_number || '';
+        const storeName = settings?.store_name || 'Delícias Caseiras';
         const locationMsg = isPickup
           ? '🏪 Retirada no local'
           : `📍 Entrega: ${form.street.trim()}, ${form.number.trim()} - ${form.neighborhood.trim()}`;
         await supabase.functions.invoke('send-whatsapp', {
           body: {
             phone: form.whatsapp.trim(),
-            message: `✅ Olá ${form.name.trim()}! Seu pedido #${orderNum} foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher Delícias Caseiras! 😋`,
+            message: `✅ Olá ${form.name.trim()}! Seu pedido #${orderNum} foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher ${storeName}! 😋`,
           },
         });
       } catch (e) {
@@ -218,12 +279,12 @@ export default function Checkout() {
           <div className="border-t mt-3 pt-3 space-y-1">
             <div className="flex justify-between text-sm">
               <span>Subtotal</span>
-              <span>{formatPrice(total())}</span>
+              <span>{formatPrice(subtotal)}</span>
             </div>
             {deliveryType === 'delivery' && (
               <div className="flex justify-between text-sm">
                 <span>🛵 Taxa de entrega</span>
-                <span>{formatPrice(DELIVERY_FEE)}</span>
+                <span>{formatPrice(deliveryFee)}</span>
               </div>
             )}
             {deliveryType === 'pickup' && (
@@ -232,14 +293,43 @@ export default function Checkout() {
                 <span>Grátis</span>
               </div>
             )}
+            {couponApplied && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>🎫 Cupom ({couponCode.toUpperCase()})</span>
+                <span>-{formatPrice(couponDiscount)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-lg pt-2 border-t">
               <span>Total</span>
-              <span className="text-primary">{formatPrice(deliveryType === 'delivery' ? total() + DELIVERY_FEE : total())}</span>
+              <span className="text-primary">{formatPrice(orderTotal)}</span>
             </div>
           </div>
         </section>
 
-
+        {/* Coupon */}
+        <section className="rounded-xl border bg-card p-4 space-y-3">
+          <h2 className="text-base font-bold flex items-center gap-2"><Tag className="h-4 w-4" /> Cupom de Desconto</h2>
+          {couponApplied ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600">✅ {couponCode.toUpperCase()}</p>
+                <p className="text-xs text-muted-foreground">Desconto de {formatPrice(couponDiscount)}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={removeCoupon}>Remover</Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="Digite o código"
+                maxLength={20}
+                className="uppercase"
+              />
+              <Button variant="outline" onClick={applyCoupon}>Aplicar</Button>
+            </div>
+          )}
+        </section>
 
         {/* Customer info */}
         <section className="space-y-4">
@@ -328,7 +418,7 @@ export default function Checkout() {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t p-4">
         <div className="mx-auto max-w-lg">
           <Button className="w-full py-5 text-base" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Enviando...' : `Confirmar Pedido - ${formatPrice(deliveryType === 'delivery' ? total() + DELIVERY_FEE : total())}`}
+            {loading ? 'Enviando...' : `Confirmar Pedido - ${formatPrice(orderTotal)}`}
           </Button>
         </div>
       </div>
