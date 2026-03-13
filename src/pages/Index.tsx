@@ -57,7 +57,7 @@ const Index = () => {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header
-        className="sticky top-0 z-40 bg-primary text-primary-foreground emoji-rain"
+        className="bg-primary text-primary-foreground emoji-rain"
         style={hasBanner ? {
           backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${settings!.banner_url})`,
           backgroundSize: 'cover',
