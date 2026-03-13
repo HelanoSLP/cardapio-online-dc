@@ -101,7 +101,7 @@ const Index = () => {
       )}
 
       {/* Categories */}
-      <div className="sticky top-[80px] z-30 bg-background/95 backdrop-blur-sm border-b">
+      <div className="bg-background border-b">
         <div className="mx-auto max-w-lg">
           {loadingCategories ? (
             <div className="flex gap-2 p-3 overflow-x-auto">
