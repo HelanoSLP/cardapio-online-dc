@@ -53,6 +53,67 @@ const Index = () => {
 
   const hasBanner = settings?.banner_url && settings.banner_url.length > 0;
 
+  const [mobileTab, setMobileTab] = useState<'menu' | 'promos'>('menu');
+
+  const promoBannersContent = bannerPromos && bannerPromos.length > 0 ? (
+    <div className="space-y-3">
+      {bannerPromos.map((promo: any) => (
+        <div key={promo.id} className="rounded-xl overflow-hidden border">
+          {promo.banner_image_url ? (
+            <div className="relative">
+              <img src={promo.banner_image_url} alt={promo.title} className="w-full h-32 object-cover" />
+              {promo.banner_text && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-3">
+                  <p className="text-sm font-bold text-white">{promo.banner_text}</p>
+                </div>
+              )}
+            </div>
+          ) : promo.banner_text ? (
+            <div className="bg-gradient-to-r from-primary to-secondary p-4 text-center">
+              <p className="text-sm font-bold text-primary-foreground">{promo.banner_text}</p>
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  ) : (
+    <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma promoção ativa no momento.</p>
+  );
+
+  const productsContent = (
+    <>
+      {loadingProducts ? (
+        <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+          {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        </div>
+      ) : groupedProducts ? (
+        <div className="space-y-6">
+          {groupedProducts.map(([catName, items]) => (
+            <div key={catName}>
+              <h2 className="text-lg font-bold text-foreground mb-3">{catName}</h2>
+              <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+                {items.map((product) => (
+                  <ProductCard key={product.id} product={product} categories={categories} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+          {products?.map((product) => (
+            <ProductCard key={product.id} product={product} categories={categories} />
+          ))}
+          {products?.length === 0 && (
+            <p className="text-center text-muted-foreground py-12 col-span-full">
+              Nenhum produto encontrado nesta categoria.
+            </p>
+          )}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -64,7 +125,7 @@ const Index = () => {
           backgroundPosition: 'center',
         } : undefined}
       >
-        <div className="relative z-10 mx-auto max-w-lg px-4 py-5">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-5">
           {settings?.store_name_type === 'logo' && settings.logo_url ? (
             <img src={settings.logo_url} alt={settings.store_name} className="h-10 object-contain" />
           ) : (
@@ -74,35 +135,9 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Promo Banners */}
-      {bannerPromos && bannerPromos.length > 0 && (
-        <div className="mx-auto max-w-lg px-4 pt-3">
-          <div className="space-y-2">
-            {bannerPromos.map((promo: any) => (
-              <div key={promo.id} className="rounded-xl overflow-hidden border">
-                {promo.banner_image_url ? (
-                  <div className="relative">
-                    <img src={promo.banner_image_url} alt={promo.title} className="w-full h-28 object-cover" />
-                    {promo.banner_text && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-3">
-                        <p className="text-sm font-bold text-white">{promo.banner_text}</p>
-                      </div>
-                    )}
-                  </div>
-                ) : promo.banner_text ? (
-                  <div className="bg-gradient-to-r from-primary to-secondary p-4 text-center">
-                    <p className="text-sm font-bold text-primary-foreground">{promo.banner_text}</p>
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Categories */}
       <div className="bg-background border-b">
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-5xl">
           {loadingCategories ? (
             <div className="flex gap-2 p-3 overflow-x-auto">
               {[1,2,3,4].map(i => <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />)}
@@ -117,38 +152,49 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Products */}
-      <main className="mx-auto max-w-lg px-4 py-4">
-        {loadingProducts ? (
-          <div className="grid grid-cols-1 gap-3">
-            {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
-          </div>
-        ) : groupedProducts ? (
-          <div className="space-y-6">
-            {groupedProducts.map(([catName, items]) => (
-              <div key={catName}>
-                <h2 className="text-lg font-bold text-foreground mb-3">{catName}</h2>
-                <div className="grid grid-cols-1 gap-3">
-                  {items.map((product) => (
-                    <ProductCard key={product.id} product={product} categories={categories} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3">
-            {products?.map((product) => (
-              <ProductCard key={product.id} product={product} categories={categories} />
-            ))}
-            {products?.length === 0 && (
-              <p className="text-center text-muted-foreground py-12">
-                Nenhum produto encontrado nesta categoria.
-              </p>
-            )}
-          </div>
-        )}
-      </main>
+      {/* Desktop/Landscape: sidebar promos + 2-col products */}
+      <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
+        {/* Left sidebar - Promotions */}
+        <aside className="w-72 shrink-0">
+          <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
+          {promoBannersContent}
+        </aside>
+
+        {/* Right - Products grid (2 cols) */}
+        <main className="flex-1 min-w-0">
+          {productsContent}
+        </main>
+      </div>
+
+      {/* Mobile Portrait: tabs for menu/promos */}
+      <div className="landscape:hidden lg:hidden">
+        <div className="flex border-b bg-background">
+          <button
+            onClick={() => setMobileTab('menu')}
+            className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
+              mobileTab === 'menu'
+                ? 'text-primary border-b-2 border-primary'
+                : 'text-muted-foreground'
+            }`}
+          >
+            🍽️ Cardápio
+          </button>
+          <button
+            onClick={() => setMobileTab('promos')}
+            className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
+              mobileTab === 'promos'
+                ? 'text-primary border-b-2 border-primary'
+                : 'text-muted-foreground'
+            }`}
+          >
+            🔥 Promoções
+          </button>
+        </div>
+
+        <main className="mx-auto max-w-lg px-4 py-4">
+          {mobileTab === 'menu' ? productsContent : promoBannersContent}
+        </main>
+      </div>
 
       <CartFloatingButton />
       <CartDrawer />
