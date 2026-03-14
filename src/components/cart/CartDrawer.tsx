@@ -29,8 +29,11 @@ export function CartDrawer() {
                   {item.removedIngredients && item.removedIngredients.length > 0 && (
                     <p className="text-xs text-destructive">Sem: {item.removedIngredients.join(', ')}</p>
                   )}
+                  {item.extraIngredients && item.extraIngredients.length > 0 && (
+                    <p className="text-xs text-green-600">+{item.extraIngredients.map(e => e.name).join(', ')}</p>
+                  )}
                   {item.notes && <p className="text-xs text-muted-foreground">{item.notes}</p>}
-                  <p className="text-sm font-bold text-primary mt-1">{formatPrice(item.price * item.quantity)}</p>
+                  <p className="text-sm font-bold text-primary mt-1">{formatPrice((item.price + (item.extraIngredients?.reduce((s, e) => s + e.price, 0) || 0)) * item.quantity)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
