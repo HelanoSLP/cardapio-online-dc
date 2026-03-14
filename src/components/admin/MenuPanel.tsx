@@ -207,6 +207,7 @@ export function MenuPanel() {
         <TabsList className="w-full">
           <TabsTrigger value="products" className="flex-1">Produtos</TabsTrigger>
           <TabsTrigger value="categories" className="flex-1">Categorias</TabsTrigger>
+          <TabsTrigger value="extras" className="flex-1">Adicionais</TabsTrigger>
         </TabsList>
 
         {/* ── Products Tab ── */}
