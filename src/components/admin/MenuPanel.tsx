@@ -28,6 +28,7 @@ export function MenuPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', description: '', price: '', category_id: '', ingredients: '', active: true, image_url: null as string | null,
+    hasPromo: false, promo_price: '',
   });
 
   // Category dialog state
