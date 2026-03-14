@@ -164,6 +164,7 @@ export function MenuPanel() {
         price: parseFloat(form.price), category_id: form.category_id,
         ingredients: form.ingredients ? form.ingredients.split(',').map((s) => s.trim()).filter(Boolean) : null,
         active: form.active,
+        promo_price: form.hasPromo && form.promo_price ? parseFloat(form.promo_price) : null,
       };
       if (editingProduct) {
         data.image_url = await uploadImage(editingProduct.id);
