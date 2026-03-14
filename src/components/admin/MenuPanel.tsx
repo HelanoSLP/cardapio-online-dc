@@ -120,9 +120,11 @@ export function MenuPanel() {
 
   const openEdit = (p: Product) => {
     setEditingProduct(p);
+    const promoPrice = (p as any).promo_price;
     setForm({
       name: p.name, description: p.description || '', price: String(p.price),
       category_id: p.category_id, ingredients: p.ingredients?.join(', ') || '', active: p.active, image_url: p.image_url,
+      hasPromo: promoPrice != null && promoPrice > 0, promo_price: promoPrice ? String(promoPrice) : '',
     });
     setImageFile(null); setImagePreview(p.image_url || null);
     setProductDialog(true);
