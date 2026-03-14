@@ -152,18 +152,18 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Desktop/Landscape: sidebar promos + 2-col products */}
+      {/* Desktop/Landscape: 2-col products + sidebar promos */}
       <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
-        {/* Left sidebar - Promotions */}
+        {/* Left - Products grid (2 cols) */}
+        <main className="flex-1 min-w-0">
+          {productsContent}
+        </main>
+
+        {/* Right sidebar - Promotions */}
         <aside className="w-72 shrink-0">
           <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
           {promoBannersContent}
         </aside>
-
-        {/* Right - Products grid (2 cols) */}
-        <main className="flex-1 min-w-0">
-          {productsContent}
-        </main>
       </div>
 
       {/* Mobile Portrait: tabs for menu/promos */}
