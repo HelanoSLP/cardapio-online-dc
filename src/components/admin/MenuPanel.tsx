@@ -354,6 +354,21 @@ export function MenuPanel() {
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
               <Label>Ativo no cardápio</Label>
             </div>
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <Switch checked={form.hasPromo} onCheckedChange={(v) => setForm({ ...form, hasPromo: v, promo_price: v ? form.promo_price : '' })} />
+                <Label className="font-semibold">🏷️ Promoção</Label>
+              </div>
+              {form.hasPromo && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Valor atual: {form.price ? formatPrice(parseFloat(form.price)) : 'R$ 0,00'}</p>
+                  <div>
+                    <Label>Valor promocional *</Label>
+                    <Input type="number" step="0.01" value={form.promo_price} onChange={(e) => setForm({ ...form, promo_price: e.target.value })} placeholder="Ex: 29.90" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={handleSave} className="w-full" disabled={uploading}>
