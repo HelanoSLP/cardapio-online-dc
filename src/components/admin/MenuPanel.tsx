@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree } from 'lucide-react';
 import { toast } from 'sonner';
+import { ExtraIngredientsPanel } from './ExtraIngredientsPanel';
 
 type Category = Tables<'categories'> & { parent_id?: string | null };
 type Product = Tables<'products'>;

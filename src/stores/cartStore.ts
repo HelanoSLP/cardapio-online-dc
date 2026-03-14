@@ -58,6 +58,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
   clearCart: () => set({ items: [] }),
   toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
   setOpen: (open) => set({ isOpen: open }),
-  total: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+  total: () => get().items.reduce((sum, i) => {
+    const extraTotal = i.extraIngredients?.reduce((s, e) => s + e.price, 0) || 0;
+    return sum + (i.price + extraTotal) * i.quantity;
+  }, 0),
   itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 }));
