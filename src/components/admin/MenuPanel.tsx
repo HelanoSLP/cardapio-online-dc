@@ -113,7 +113,7 @@ export function MenuPanel() {
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '' });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
