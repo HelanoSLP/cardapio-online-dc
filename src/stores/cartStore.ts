@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 
+export interface ExtraIngredientItem {
+  name: string;
+  price: number;
+}
+
 export interface CartItem {
   productId: string;
   name: string;
@@ -7,6 +12,7 @@ export interface CartItem {
   quantity: number;
   notes?: string;
   removedIngredients?: string[];
+  extraIngredients?: ExtraIngredientItem[];
 }
 
 interface CartStore {
