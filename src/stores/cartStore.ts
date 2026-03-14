@@ -1,5 +1,10 @@
 import { create } from 'zustand';
 
+export interface ExtraIngredientItem {
+  name: string;
+  price: number;
+}
+
 export interface CartItem {
   productId: string;
   name: string;
@@ -7,6 +12,7 @@ export interface CartItem {
   quantity: number;
   notes?: string;
   removedIngredients?: string[];
+  extraIngredients?: ExtraIngredientItem[];
 }
 
 interface CartStore {
@@ -52,6 +58,9 @@ export const useCartStore = create<CartStore>((set, get) => ({
   clearCart: () => set({ items: [] }),
   toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
   setOpen: (open) => set({ isOpen: open }),
-  total: () => get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+  total: () => get().items.reduce((sum, i) => {
+    const extraTotal = i.extraIngredients?.reduce((s, e) => s + e.price, 0) || 0;
+    return sum + (i.price + extraTotal) * i.quantity;
+  }, 0),
   itemCount: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
 }));

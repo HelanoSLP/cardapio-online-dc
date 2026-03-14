@@ -99,6 +99,33 @@ export type Database = {
           },
         ]
       }
+      extra_ingredients: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          price: number
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -212,6 +239,7 @@ export type Database = {
           ingredients: string[] | null
           name: string
           price: number
+          promo_price: number | null
           sort_order: number
           updated_at: string
         }
@@ -225,6 +253,7 @@ export type Database = {
           ingredients?: string[] | null
           name: string
           price: number
+          promo_price?: number | null
           sort_order?: number
           updated_at?: string
         }
@@ -238,6 +267,7 @@ export type Database = {
           ingredients?: string[] | null
           name?: string
           price?: number
+          promo_price?: number | null
           sort_order?: number
           updated_at?: string
         }

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Product, Category, isPizzaCategory, isComboCategory, detectPizzaSizeFromName, getPizzaCategoryIds, PIZZA_SIZES, PizzaSize } from '@/hooks/useMenu';
-import { useCartStore } from '@/stores/cartStore';
+import { useCartStore, ExtraIngredientItem } from '@/stores/cartStore';
 import { Plus, Minus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -19,11 +19,16 @@ interface ProductCardProps {
 export function ProductCard({ product, categories }: ProductCardProps) {
   const [open, setOpen] = useState(false);
   const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
+  const [addedExtras, setAddedExtras] = useState<ExtraIngredientItem[]>([]);
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<PizzaSize | null>(null);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const addItem = useCartStore((s) => s.addItem);
+
+  const promoPrice = (product as any).promo_price as number | null;
+  const hasPromo = promoPrice != null && promoPrice > 0;
+  const displayPrice = hasPromo ? promoPrice : product.price;
 
   const isPizza = useMemo(
     () => isPizzaCategory(categories, product.category_id),
@@ -35,29 +40,23 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     [categories, product.category_id]
   );
 
-  // For combos, detect if the product name mentions a pizza size
   const comboDetectedSize = useMemo(() => {
     if (!isCombo) return null;
     return detectPizzaSizeFromName(product.name);
   }, [isCombo, product.name]);
 
-  // Combo has pizza if a size was detected in its name
   const comboHasPizza = isCombo && comboDetectedSize !== null;
 
-  // For combos with pizza, allow size selection starting from detected size
-  // or just use detected size directly
   const effectiveSize = isPizza ? selectedSize : comboDetectedSize;
   const maxFlavors = effectiveSize
     ? PIZZA_SIZES.find((s) => s.key === effectiveSize)?.maxFlavors || 1
     : 1;
 
-  // Get pizza category IDs for fetching flavors (for combos)
   const pizzaCategoryIds = useMemo(
     () => getPizzaCategoryIds(categories),
     [categories]
   );
 
-  // Fetch sibling products for flavor selection (pizza: same category, combo: all pizza products)
   const flavorCategoryIds = isPizza ? [product.category_id] : pizzaCategoryIds;
   const { data: flavorProducts } = useQuery({
     queryKey: ['flavor-products', flavorCategoryIds],
@@ -74,12 +73,24 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     enabled: (isPizza || comboHasPizza) && open,
   });
 
+  // Fetch extra ingredients
+  const { data: extraIngredients } = useQuery({
+    queryKey: ['extra-ingredients'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('extra_ingredients')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order');
+      return (data || []) as { id: string; name: string; price: number }[];
+    },
+    enabled: open,
+  });
+
   const showSizeSelector = isPizza;
   const showFlavorSelector = (isPizza && selectedSize && flavorProducts && flavorProducts.length > 1) ||
     (comboHasPizza && flavorProducts && flavorProducts.length > 1);
-  const showIngredientRemoval = product.ingredients && product.ingredients.length > 0;
 
-  // For combos with pizza, gather ingredients from selected flavors
   const comboFlavorIngredients = useMemo(() => {
     if (!comboHasPizza || !flavorProducts || selectedFlavors.length === 0) return [];
     const allIngredients = new Set<string>();
@@ -97,6 +108,9 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const availableIngredients = comboHasPizza && selectedFlavors.length > 0
     ? comboFlavorIngredients
     : (product.ingredients || []);
+
+  const extrasTotal = addedExtras.reduce((s, e) => s + e.price, 0);
+  const itemTotal = (displayPrice + extrasTotal) * quantity;
 
   const handleAdd = () => {
     const flavorNames = selectedFlavors.length > 1
@@ -117,10 +131,11 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     addItem({
       productId: product.id,
       name: displayName,
-      price: product.price,
+      price: displayPrice,
       quantity,
       notes: notes.trim() || undefined,
       removedIngredients: removedIngredients.length > 0 ? removedIngredients : undefined,
+      extraIngredients: addedExtras.length > 0 ? addedExtras : undefined,
     });
     toast.success(`${product.name} adicionado ao carrinho!`);
     resetAndClose();
@@ -129,6 +144,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const resetAndClose = () => {
     setOpen(false);
     setRemovedIngredients([]);
+    setAddedExtras([]);
     setNotes('');
     setQuantity(1);
     setSelectedSize(null);
@@ -139,6 +155,14 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     setRemovedIngredients((prev) =>
       prev.includes(ing) ? prev.filter((i) => i !== ing) : [...prev, ing]
     );
+  };
+
+  const toggleExtra = (extra: { name: string; price: number }) => {
+    setAddedExtras((prev) => {
+      const exists = prev.find((e) => e.name === extra.name);
+      if (exists) return prev.filter((e) => e.name !== extra.name);
+      return [...prev, { name: extra.name, price: extra.price }];
+    });
   };
 
   const toggleFlavor = (name: string) => {
@@ -173,7 +197,16 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <h3 className="font-semibold text-card-foreground line-clamp-1">{product.name}</h3>
             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{product.description}</p>
           </div>
-          <p className="font-bold text-primary text-lg">{formatPrice(product.price)}</p>
+          <div className="flex items-center gap-2">
+            {hasPromo ? (
+              <>
+                <span className="text-sm text-muted-foreground line-through">{formatPrice(product.price)}</span>
+                <span className="font-bold text-lg text-green-600">{formatPrice(promoPrice)}</span>
+              </>
+            ) : (
+              <p className="font-bold text-primary text-lg">{formatPrice(product.price)}</p>
+            )}
+          </div>
         </div>
       </button>
 
@@ -186,9 +219,18 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <img src={product.image_url} alt={product.name} className="w-full h-40 object-cover rounded-lg" />
           )}
           <p className="text-sm text-muted-foreground">{product.description}</p>
-          <p className="font-bold text-primary text-xl">{formatPrice(product.price)}</p>
+          
+          {hasPromo ? (
+            <div className="flex items-center gap-2">
+              <span className="text-base text-muted-foreground line-through">{formatPrice(product.price)}</span>
+              <span className="font-bold text-xl text-green-600">{formatPrice(promoPrice)}</span>
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">PROMO</span>
+            </div>
+          ) : (
+            <p className="font-bold text-primary text-xl">{formatPrice(product.price)}</p>
+          )}
 
-          {/* Pizza Size Selection (only for direct pizza products) */}
+          {/* Pizza Size Selection */}
           {showSizeSelector && (
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
@@ -280,6 +322,30 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             </div>
           )}
 
+          {/* Extra ingredients */}
+          {extraIngredients && extraIngredients.length > 0 && (
+            <div>
+              <p className="text-sm font-medium mb-2">Adicionar ingredientes:</p>
+              <div className="grid grid-cols-1 gap-1.5">
+                {extraIngredients.map((extra) => {
+                  const isAdded = addedExtras.some((e) => e.name === extra.name);
+                  return (
+                    <label key={extra.id} className="flex items-center justify-between gap-2 text-sm cursor-pointer rounded-lg border p-2 hover:bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={isAdded}
+                          onCheckedChange={() => toggleExtra(extra)}
+                        />
+                        <span>{extra.name}</span>
+                      </div>
+                      <span className="text-xs font-medium text-green-600">+{formatPrice(extra.price)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <Textarea
             placeholder="Observações (ex: borda recheada, bem passado...)"
             value={notes}
@@ -306,7 +372,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             >
               {!canAdd
                 ? 'Selecione um tamanho'
-                : `Adicionar ${formatPrice(product.price * quantity)}`}
+                : `Adicionar ${formatPrice(itemTotal)}`}
             </Button>
           </DialogFooter>
         </DialogContent>

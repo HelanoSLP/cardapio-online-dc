@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree } from 'lucide-react';
 import { toast } from 'sonner';
+import { ExtraIngredientsPanel } from './ExtraIngredientsPanel';
 
 type Category = Tables<'categories'> & { parent_id?: string | null };
 type Product = Tables<'products'>;
@@ -28,6 +29,7 @@ export function MenuPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '', description: '', price: '', category_id: '', ingredients: '', active: true, image_url: null as string | null,
+    hasPromo: false, promo_price: '',
   });
 
   // Category dialog state
@@ -112,16 +114,18 @@ export function MenuPanel() {
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '' });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
 
   const openEdit = (p: Product) => {
     setEditingProduct(p);
+    const promoPrice = (p as any).promo_price;
     setForm({
       name: p.name, description: p.description || '', price: String(p.price),
       category_id: p.category_id, ingredients: p.ingredients?.join(', ') || '', active: p.active, image_url: p.image_url,
+      hasPromo: promoPrice != null && promoPrice > 0, promo_price: promoPrice ? String(promoPrice) : '',
     });
     setImageFile(null); setImagePreview(p.image_url || null);
     setProductDialog(true);
@@ -161,6 +165,7 @@ export function MenuPanel() {
         price: parseFloat(form.price), category_id: form.category_id,
         ingredients: form.ingredients ? form.ingredients.split(',').map((s) => s.trim()).filter(Boolean) : null,
         active: form.active,
+        promo_price: form.hasPromo && form.promo_price ? parseFloat(form.promo_price) : null,
       };
       if (editingProduct) {
         data.image_url = await uploadImage(editingProduct.id);
@@ -203,6 +208,7 @@ export function MenuPanel() {
         <TabsList className="w-full">
           <TabsTrigger value="products" className="flex-1">Produtos</TabsTrigger>
           <TabsTrigger value="categories" className="flex-1">Categorias</TabsTrigger>
+          <TabsTrigger value="extras" className="flex-1">Adicionais</TabsTrigger>
         </TabsList>
 
         {/* ── Products Tab ── */}
@@ -293,6 +299,10 @@ export function MenuPanel() {
             ))}
           </div>
         </TabsContent>
+        {/* ── Extra Ingredients Tab ── */}
+        <TabsContent value="extras">
+          <ExtraIngredientsPanel />
+        </TabsContent>
       </Tabs>
 
       {/* ── Product Dialog ── */}
@@ -349,6 +359,21 @@ export function MenuPanel() {
             <div className="flex items-center gap-2">
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
               <Label>Ativo no cardápio</Label>
+            </div>
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <Switch checked={form.hasPromo} onCheckedChange={(v) => setForm({ ...form, hasPromo: v, promo_price: v ? form.promo_price : '' })} />
+                <Label className="font-semibold">🏷️ Promoção</Label>
+              </div>
+              {form.hasPromo && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">Valor atual: {form.price ? formatPrice(parseFloat(form.price)) : 'R$ 0,00'}</p>
+                  <div>
+                    <Label>Valor promocional *</Label>
+                    <Input type="number" step="0.01" value={form.promo_price} onChange={(e) => setForm({ ...form, promo_price: e.target.value })} placeholder="Ex: 29.90" />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>

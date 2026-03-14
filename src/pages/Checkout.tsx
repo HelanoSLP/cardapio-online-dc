@@ -137,9 +137,10 @@ export default function Checkout() {
         product_id: item.productId,
         product_name: item.name,
         quantity: item.quantity,
-        unit_price: item.price,
+        unit_price: item.price + (item.extraIngredients?.reduce((s, e) => s + e.price, 0) || 0),
         notes: [
           item.removedIngredients?.length ? `Sem: ${item.removedIngredients.join(', ')}` : '',
+          item.extraIngredients?.length ? `Add: ${item.extraIngredients.map(e => e.name).join(', ')}` : '',
           item.notes || '',
         ].filter(Boolean).join(' | ') || null,
       }));
