@@ -298,6 +298,10 @@ export function MenuPanel() {
             ))}
           </div>
         </TabsContent>
+        {/* ── Extra Ingredients Tab ── */}
+        <TabsContent value="extras">
+          <ExtraIngredientsPanel />
+        </TabsContent>
       </Tabs>
 
       {/* ── Product Dialog ── */}
