@@ -1,11 +1,14 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Printer } from 'lucide-react';
+import { Printer, CalendarIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
@@ -22,6 +25,12 @@ const paymentLabels: Record<string, string> = {
   card_debit: '💳 Débito',
   card_credit: '💳 Crédito',
   pix: '📱 Pix',
+};
+
+const maskWhatsApp = (phone: string) => {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length <= 4) return '****';
+  return digits.slice(0, 2) + '****' + digits.slice(-4);
 };
 
 const sendWhatsApp = async (phone: string, message: string) => {
@@ -42,6 +51,8 @@ export function OrdersPanel() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [filter, setFilter] = useState<string>('all');
+  const [paymentFilter, setPaymentFilter] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
@@ -49,18 +60,32 @@ export function OrdersPanel() {
   const formatDate = (date: string) =>
     new Date(date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-  const fetchOrders = async () => {
+  const formatDateLabel = (date: Date) =>
+    date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  const isToday = useMemo(() => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    return selectedDate.toDateString() === today.toDateString();
+  }, [selectedDate]);
+
+  const fetchOrders = async () => {
+    const start = new Date(selectedDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(selectedDate);
+    end.setHours(23, 59, 59, 999);
 
     let query = supabase
       .from('orders')
       .select('*')
-      .gte('created_at', today.toISOString())
+      .gte('created_at', start.toISOString())
+      .lte('created_at', end.toISOString())
       .order('created_at', { ascending: false });
 
     if (filter !== 'all') {
       query = query.eq('status', filter as any);
+    }
+    if (paymentFilter !== 'all') {
+      query = query.eq('payment_method', paymentFilter as any);
     }
 
     const { data } = await query;
@@ -77,6 +102,8 @@ export function OrdersPanel() {
           });
           setOrderItems(grouped);
         }
+      } else {
+        setOrderItems({});
       }
     }
   };
@@ -95,14 +122,14 @@ export function OrdersPanel() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [filter]);
+  }, [filter, paymentFilter, selectedDate]);
 
   const getWhatsAppMessage = (order: Order, status: string): string => {
     const statusMessages: Record<string, string> = {
-      received: `✅ Olá ${order.customer_name}! Seu pedido #${order.order_number} foi recebido com sucesso! Em breve começaremos a preparar. 😊`,
-      preparing: `👨‍🍳 Olá ${order.customer_name}! Seu pedido #${order.order_number} já está sendo preparado! 🍕`,
-      out_for_delivery: `🛵 Olá ${order.customer_name}! Seu pedido #${order.order_number} saiu para entrega! Aguarde em breve! 📦`,
-      delivered: `🎉 Olá ${order.customer_name}! Seu pedido #${order.order_number} foi entregue! Bom apetite! 😋🍕`,
+      received: `✅ Olá ${order.customer_name}! Seu pedido foi recebido com sucesso! Em breve começaremos a preparar. 😊`,
+      preparing: `👨‍🍳 Olá ${order.customer_name}! Seu pedido já está sendo preparado! 🍕`,
+      out_for_delivery: `🛵 Olá ${order.customer_name}! Seu pedido saiu para entrega! Aguarde em breve! 📦`,
+      delivered: `🎉 Olá ${order.customer_name}! Seu pedido foi entregue! Bom apetite! 😋🍕`,
     };
     return statusMessages[status] || '';
   };
@@ -121,7 +148,6 @@ export function OrdersPanel() {
       toast.success('Status atualizado');
       fetchOrders();
 
-      // Send WhatsApp notification automatically via Z-API
       if (order) {
         const msg = getWhatsAppMessage(order, status);
         if (msg) {
@@ -142,7 +168,7 @@ export function OrdersPanel() {
     if (!printWindow) return;
 
     printWindow.document.write(`
-      <html><head><title>Pedido #${order.order_number}</title>
+      <html><head><title>Pedido</title>
       <style>
         body { font-family: monospace; font-size: 12px; width: 280px; margin: 0 auto; padding: 10px; }
         h1 { font-size: 16px; text-align: center; margin: 5px 0; }
@@ -152,11 +178,9 @@ export function OrdersPanel() {
         .notes { font-style: italic; font-size: 11px; margin-left: 10px; }
       </style></head><body>
       <h1>😋 Delícias Caseiras</h1>
-      <p style="text-align:center">Pedido #${order.order_number}</p>
       <p style="text-align:center">${formatDate(order.created_at)}</p>
       <hr/>
       <p><b>Cliente:</b> ${order.customer_name}</p>
-      <p><b>WhatsApp:</b> ${order.customer_whatsapp}</p>
       <p><b>Endereço:</b> ${order.address_street}, ${order.address_number} - ${order.address_neighborhood}</p>
       ${order.address_reference ? `<p><b>Ref:</b> ${order.address_reference}</p>` : ''}
       <hr/>
@@ -177,39 +201,85 @@ export function OrdersPanel() {
     printWindow.document.close();
   };
 
-  const todayTotal = orders.reduce((sum, o) => sum + Number(o.total), 0);
+  // Payment method summaries
+  const paymentSummaries = useMemo(() => {
+    const methods = ['pix', 'cash', 'card_debit', 'card_credit'] as const;
+    return methods.map((m) => {
+      const filtered = orders.filter((o) => o.payment_method === m);
+      return {
+        method: m,
+        label: paymentLabels[m],
+        count: filtered.length,
+        total: filtered.reduce((s, o) => s + Number(o.total), 0),
+      };
+    });
+  }, [orders]);
+
+  const dayTotal = orders.reduce((sum, o) => sum + Number(o.total), 0);
 
   return (
     <div className="space-y-4 mt-4">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border bg-card p-3 text-center">
-          <p className="text-2xl font-bold">{orders.length}</p>
-          <p className="text-xs text-muted-foreground">Pedidos Hoje</p>
-        </div>
-        <div className="rounded-xl border bg-card p-3 text-center">
-          <p className="text-2xl font-bold text-primary">{formatPrice(todayTotal)}</p>
-          <p className="text-xs text-muted-foreground">Total do Dia</p>
-        </div>
-        <div className="rounded-xl border bg-card p-3 text-center">
-          <p className="text-2xl font-bold text-yellow-600">{orders.filter((o) => o.status === 'received').length}</p>
-          <p className="text-xs text-muted-foreground">Aguardando</p>
-        </div>
-        <div className="rounded-xl border bg-card p-3 text-center">
-          <p className="text-2xl font-bold text-green-600">{orders.filter((o) => o.status === 'delivered').length}</p>
-          <p className="text-xs text-muted-foreground">Entregues</p>
-        </div>
+      {/* Date picker */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={cn('justify-start text-left font-normal', !selectedDate && 'text-muted-foreground')}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {isToday ? 'Hoje' : formatDateLabel(selectedDate)}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={(d) => d && setSelectedDate(d)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        {!isToday && (
+          <Button variant="ghost" size="sm" onClick={() => setSelectedDate(new Date())}>Voltar p/ hoje</Button>
+        )}
       </div>
 
-      <Select value={filter} onValueChange={setFilter}>
-        <SelectTrigger className="w-48"><SelectValue placeholder="Filtrar por status" /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos</SelectItem>
-          <SelectItem value="received">Recebido</SelectItem>
-          <SelectItem value="preparing">Em Preparo</SelectItem>
-          <SelectItem value="out_for_delivery">Saiu p/ Entrega</SelectItem>
-          <SelectItem value="delivered">Entregue</SelectItem>
-        </SelectContent>
-      </Select>
+      {/* Summary cards by payment */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="rounded-xl border bg-card p-3 text-center">
+          <p className="text-2xl font-bold text-primary">{formatPrice(dayTotal)}</p>
+          <p className="text-xs text-muted-foreground">Total ({orders.length} pedidos)</p>
+        </div>
+        {paymentSummaries.map((ps) => (
+          <div key={ps.method} className="rounded-xl border bg-card p-3 text-center">
+            <p className="text-lg font-bold">{formatPrice(ps.total)}</p>
+            <p className="text-xs text-muted-foreground">{ps.label} ({ps.count})</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-3 flex-wrap">
+        <Select value={filter} onValueChange={setFilter}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Filtrar por status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            <SelectItem value="received">Recebido</SelectItem>
+            <SelectItem value="preparing">Em Preparo</SelectItem>
+            <SelectItem value="out_for_delivery">Saiu p/ Entrega</SelectItem>
+            <SelectItem value="delivered">Entregue</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Filtrar por pagamento" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os pagamentos</SelectItem>
+            <SelectItem value="pix">📱 Pix</SelectItem>
+            <SelectItem value="cash">💵 Dinheiro</SelectItem>
+            <SelectItem value="card_debit">💳 Débito</SelectItem>
+            <SelectItem value="card_credit">💳 Crédito</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {orders.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">Nenhum pedido encontrado</p>
@@ -219,7 +289,7 @@ export function OrdersPanel() {
             <div key={order.id} className="rounded-xl border bg-card p-4 space-y-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-bold">Pedido #{order.order_number}</p>
+                  <p className="font-bold">{order.customer_name}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(order.created_at)}</p>
                 </div>
                 <Badge className={statusLabels[order.status]?.color}>
@@ -228,7 +298,7 @@ export function OrdersPanel() {
               </div>
 
               <div className="text-sm space-y-1">
-                <p><b>Cliente:</b> {order.customer_name} • {order.customer_whatsapp}</p>
+                <p><b>WhatsApp:</b> {maskWhatsApp(order.customer_whatsapp)}</p>
                 <p><b>Endereço:</b> {order.address_street}, {order.address_number} - {order.address_neighborhood}</p>
                 {order.address_reference && <p><b>Ref:</b> {order.address_reference}</p>}
               </div>

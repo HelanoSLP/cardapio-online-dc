@@ -10,17 +10,19 @@ export interface StoreSettings {
   cashback_enabled: boolean;
   cashback_threshold: number;
   cashback_value: number;
+  store_open: boolean;
 }
 
 const DEFAULTS: StoreSettings = {
   store_name: 'Delícias Caseiras',
-  store_name_type: 'text',
+  store_name_type: 'logo',
   logo_url: '',
   banner_url: '',
   delivery_fee: 7,
   cashback_enabled: false,
   cashback_threshold: 100,
   cashback_value: 10,
+  store_open: true,
 };
 
 export function useStoreSettings() {
@@ -35,13 +37,14 @@ export function useStoreSettings() {
       data.forEach((row: any) => { map[row.key] = row.value; });
       return {
         store_name: map.store_name || DEFAULTS.store_name,
-        store_name_type: (map.store_name_type as 'text' | 'logo') || 'text',
+        store_name_type: (map.store_name_type as 'text' | 'logo') || 'logo',
         logo_url: map.logo_url || '',
         banner_url: map.banner_url || '',
         delivery_fee: parseFloat(map.delivery_fee) || DEFAULTS.delivery_fee,
         cashback_enabled: map.cashback_enabled === 'true',
         cashback_threshold: parseFloat(map.cashback_threshold) || DEFAULTS.cashback_threshold,
         cashback_value: parseFloat(map.cashback_value) || DEFAULTS.cashback_value,
+        store_open: map.store_open !== 'false',
       };
     },
     staleTime: 1000 * 60 * 5,

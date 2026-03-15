@@ -52,6 +52,7 @@ const Index = () => {
   }, [isGrouped, products]);
 
   const hasBanner = settings?.banner_url && settings.banner_url.length > 0;
+  const isOpen = settings?.store_open !== false;
 
   const [mobileTab, setMobileTab] = useState<'menu' | 'promos'>('menu');
 
@@ -116,24 +117,31 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
+      {/* Header - banner with more height, no subtitle text */}
       <header
-        className="sticky top-0 z-40 bg-primary text-primary-foreground emoji-rain"
+        className="sticky top-0 z-40 bg-primary text-primary-foreground"
         style={hasBanner ? {
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url(${settings!.banner_url})`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${settings!.banner_url})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         } : undefined}
       >
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-5">
-          {settings?.store_name_type === 'logo' && settings.logo_url ? (
-            <img src={settings.logo_url} alt={settings.store_name} className="h-10 object-contain" />
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8">
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} alt={settings.store_name} className="h-14 object-contain" />
           ) : (
             <h1 className="text-2xl tracking-tight">😋 {settings?.store_name || 'Delícias Caseiras'}</h1>
           )}
-          <p className="text-sm opacity-80">Peça pelo cardápio digital</p>
         </div>
       </header>
+
+      {/* Store closed banner */}
+      {!isOpen && (
+        <div className="bg-destructive text-destructive-foreground text-center py-3 px-4">
+          <p className="text-sm font-bold">🔴 Estamos fechados no momento</p>
+          <p className="text-xs opacity-80 mt-0.5">Confira nosso cardápio e volte quando estivermos abertos!</p>
+        </div>
+      )}
 
       {/* Categories */}
       <div className="bg-background border-b">
@@ -154,12 +162,9 @@ const Index = () => {
 
       {/* Desktop/Landscape: 2-col products + sidebar promos */}
       <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
-        {/* Left - Products grid (2 cols) */}
         <main className="flex-1 min-w-0">
           {productsContent}
         </main>
-
-        {/* Right sidebar - Promotions */}
         <aside className="w-72 shrink-0">
           <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
           {promoBannersContent}
