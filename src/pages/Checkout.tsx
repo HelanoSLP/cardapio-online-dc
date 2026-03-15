@@ -196,7 +196,6 @@ export default function Checkout() {
 
       // Send confirmation WhatsApp
       try {
-        const orderData = order as { order_number?: number } | null;
         const storeName = settings?.store_name || 'Delícias Caseiras';
         const locationMsg = isPickup
           ? '🏪 Retirada no local'
