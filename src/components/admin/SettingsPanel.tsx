@@ -4,31 +4,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ImagePlus, X, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Settings {
   store_name: string;
-  store_name_type: string;
   logo_url: string;
   banner_url: string;
   delivery_fee: string;
   cashback_enabled: string;
   cashback_threshold: string;
   cashback_value: string;
+  store_open: string;
 }
 
 export function SettingsPanel() {
   const [settings, setSettings] = useState<Settings>({
     store_name: 'Delícias Caseiras',
-    store_name_type: 'text',
     logo_url: '',
     banner_url: '',
     delivery_fee: '7',
     cashback_enabled: 'false',
     cashback_threshold: '100',
     cashback_value: '10',
+    store_open: 'true',
   });
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -82,17 +81,18 @@ export function SettingsPanel() {
 
       const updates = [
         { key: 'store_name', value: settings.store_name },
-        { key: 'store_name_type', value: settings.store_name_type },
+        { key: 'store_name_type', value: 'logo' },
         { key: 'logo_url', value: logoUrl },
         { key: 'banner_url', value: bannerUrl },
         { key: 'delivery_fee', value: settings.delivery_fee },
         { key: 'cashback_enabled', value: settings.cashback_enabled },
         { key: 'cashback_threshold', value: settings.cashback_threshold },
         { key: 'cashback_value', value: settings.cashback_value },
+        { key: 'store_open', value: settings.store_open },
       ];
 
       for (const u of updates) {
-        await supabase.from('store_settings').update({ value: u.value, updated_at: new Date().toISOString() }).eq('key', u.key);
+        await supabase.from('store_settings').upsert({ key: u.key, value: u.value, updated_at: new Date().toISOString() });
       }
 
       setLogoFile(null);
@@ -113,50 +113,53 @@ export function SettingsPanel() {
 
   return (
     <div className="space-y-6 mt-4">
-      {/* Store Identity */}
+      {/* Store Open/Closed */}
+      <section className="rounded-xl border bg-card p-4 space-y-4">
+        <h2 className="text-base font-bold">🕐 Status do Estabelecimento</h2>
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={settings.store_open === 'true'}
+            onCheckedChange={(v) => update('store_open', v ? 'true' : 'false')}
+          />
+          <Label className="text-sm">
+            {settings.store_open === 'true' ? (
+              <span className="text-green-600 font-semibold">🟢 Aberto</span>
+            ) : (
+              <span className="text-destructive font-semibold">🔴 Fechado</span>
+            )}
+          </Label>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Quando desativado, os clientes verão um aviso de que o estabelecimento está fechado.
+        </p>
+      </section>
+
+      {/* Store Identity - Logo only */}
       <section className="rounded-xl border bg-card p-4 space-y-4">
         <h2 className="text-base font-bold">🏪 Identidade da Loja</h2>
 
         <div>
-          <Label>Tipo de exibição no topo</Label>
-          <RadioGroup value={settings.store_name_type} onValueChange={(v) => update('store_name_type', v)} className="mt-2">
-            <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50">
-              <RadioGroupItem value="text" />
-              <span className="text-sm font-medium">Texto (nome da empresa)</span>
-            </label>
-            <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50">
-              <RadioGroupItem value="logo" />
-              <span className="text-sm font-medium">Logo (imagem)</span>
-            </label>
-          </RadioGroup>
+          <Label>Nome da empresa (usado internamente)</Label>
+          <Input value={settings.store_name} onChange={(e) => update('store_name', e.target.value)} maxLength={50} placeholder="Nome da sua empresa" />
         </div>
 
-        {settings.store_name_type === 'text' && (
-          <div>
-            <Label>Nome da empresa</Label>
-            <Input value={settings.store_name} onChange={(e) => update('store_name', e.target.value)} maxLength={50} placeholder="Nome da sua empresa" />
-          </div>
-        )}
-
-        {settings.store_name_type === 'logo' && (
-          <div>
-            <Label>Logo</Label>
-            <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect('logo')} />
-            {logoPreview ? (
-              <div className="relative mt-2">
-                <img src={logoPreview} alt="Logo" className="h-20 object-contain rounded-lg border p-2" />
-                <Button variant="destructive" size="icon" className="absolute top-0 right-0 h-6 w-6" onClick={() => { setLogoFile(null); setLogoPreview(null); update('logo_url', ''); }}>
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            ) : (
-              <button type="button" onClick={() => logoInputRef.current?.click()} className="mt-2 w-full h-20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
-                <ImagePlus className="h-6 w-6 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Upload logo</span>
-              </button>
-            )}
-          </div>
-        )}
+        <div>
+          <Label>Logo</Label>
+          <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect('logo')} />
+          {logoPreview ? (
+            <div className="relative mt-2">
+              <img src={logoPreview} alt="Logo" className="h-20 object-contain rounded-lg border p-2" />
+              <Button variant="destructive" size="icon" className="absolute top-0 right-0 h-6 w-6" onClick={() => { setLogoFile(null); setLogoPreview(null); update('logo_url', ''); }}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => logoInputRef.current?.click()} className="mt-2 w-full h-20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center gap-2 hover:border-primary/50 transition-colors">
+              <ImagePlus className="h-6 w-6 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Upload logo</span>
+            </button>
+          )}
+        </div>
 
         <div>
           <Label>Banner de fundo (header)</Label>

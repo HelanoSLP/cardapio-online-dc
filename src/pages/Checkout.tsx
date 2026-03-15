@@ -197,7 +197,6 @@ export default function Checkout() {
       // Send confirmation WhatsApp
       try {
         const orderData = order as { order_number?: number } | null;
-        const orderNum = orderData?.order_number || '';
         const storeName = settings?.store_name || 'Delícias Caseiras';
         const locationMsg = isPickup
           ? '🏪 Retirada no local'
@@ -205,7 +204,7 @@ export default function Checkout() {
         await supabase.functions.invoke('send-whatsapp', {
           body: {
             phone: form.whatsapp.trim(),
-            message: `✅ Olá ${form.name.trim()}! Seu pedido #${orderNum} foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher ${storeName}! 😋`,
+            message: `✅ Olá ${form.name.trim()}! Seu pedido foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher ${storeName}! 😋`,
           },
         });
       } catch (e) {

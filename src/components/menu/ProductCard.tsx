@@ -40,14 +40,29 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     [categories, product.category_id]
   );
 
+  // For combos: detect pizza size from name, or check if name mentions "pizza"
   const comboDetectedSize = useMemo(() => {
     if (!isCombo) return null;
     return detectPizzaSizeFromName(product.name);
   }, [isCombo, product.name]);
 
-  const comboHasPizza = isCombo && comboDetectedSize !== null;
+  const comboMentionsPizza = useMemo(() => {
+    if (!isCombo) return false;
+    return product.name.toLowerCase().includes('pizza');
+  }, [isCombo, product.name]);
 
-  const effectiveSize = isPizza ? selectedSize : comboDetectedSize;
+  // Combo has pizza if size detected OR name mentions pizza
+  const comboHasPizza = isCombo && (comboDetectedSize !== null || comboMentionsPizza);
+
+  // For combos without detected size, show size selector
+  const comboNeedsSizeSelection = comboHasPizza && comboDetectedSize === null;
+
+  const effectiveSize = isPizza
+    ? selectedSize
+    : comboNeedsSizeSelection
+      ? selectedSize
+      : comboDetectedSize;
+
   const maxFlavors = effectiveSize
     ? PIZZA_SIZES.find((s) => s.key === effectiveSize)?.maxFlavors || 1
     : 1;
@@ -87,9 +102,8 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     enabled: open,
   });
 
-  const showSizeSelector = isPizza;
-  const showFlavorSelector = (isPizza && selectedSize && flavorProducts && flavorProducts.length > 1) ||
-    (comboHasPizza && flavorProducts && flavorProducts.length > 1);
+  const showSizeSelector = isPizza || comboNeedsSizeSelection;
+  const showFlavorSelector = ((isPizza || comboHasPizza) && effectiveSize && flavorProducts && flavorProducts.length > 1);
 
   const comboFlavorIngredients = useMemo(() => {
     if (!comboHasPizza || !flavorProducts || selectedFlavors.length === 0) return [];
@@ -124,7 +138,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
 
     const displayName = [
       product.name,
-      isPizza && sizeLabel ? `(${sizeLabel})` : '',
+      (isPizza || comboNeedsSizeSelection) && sizeLabel ? `(${sizeLabel})` : '',
       flavorNames ? `- ${flavorNames}` : '',
     ].filter(Boolean).join(' ');
 
@@ -179,7 +193,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
-  const canAdd = isPizza ? !!selectedSize : true;
+  const canAdd = (isPizza || comboNeedsSizeSelection) ? !!selectedSize : true;
 
   return (
     <>
@@ -230,7 +244,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <p className="font-bold text-primary text-xl">{formatPrice(product.price)}</p>
           )}
 
-          {/* Pizza Size Selection */}
+          {/* Pizza/Combo Size Selection */}
           {showSizeSelector && (
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
@@ -258,8 +272,8 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             </div>
           )}
 
-          {/* Combo pizza info */}
-          {comboHasPizza && (
+          {/* Combo pizza info (when size is auto-detected) */}
+          {comboHasPizza && !comboNeedsSizeSelection && (
             <div className="rounded-lg bg-accent/30 p-3">
               <p className="text-sm font-medium">
                 🍕 Pizza {PIZZA_SIZES.find((s) => s.key === comboDetectedSize)?.label} — até {maxFlavors} sabores
