@@ -1,14 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Printer, CalendarIcon } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import { toast } from 'sonner';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
 
 type Order = Tables<'orders'>;
 type OrderItem = Tables<'order_items'>;
@@ -55,7 +52,6 @@ export function OrdersPanel() {
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [filter, setFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
@@ -63,24 +59,16 @@ export function OrdersPanel() {
   const formatDate = (date: string) =>
     new Date(date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-  const formatDateLabel = (date: Date) =>
-    date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-
-  const isToday = useMemo(() => {
-    const today = new Date();
-    return selectedDate.toDateString() === today.toDateString();
-  }, [selectedDate]);
-
   const fetchOrders = async () => {
-    const start = new Date(selectedDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(selectedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date();
     end.setHours(23, 59, 59, 999);
 
     let query = supabase
       .from('orders')
       .select('*')
-      .gte('created_at', start.toISOString())
+      .gte('created_at', today.toISOString())
       .lte('created_at', end.toISOString())
       .order('created_at', { ascending: false });
 
@@ -125,7 +113,7 @@ export function OrdersPanel() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [filter, paymentFilter, selectedDate]);
+  }, [filter, paymentFilter]);
 
   const getWhatsAppMessage = (order: Order, status: string): string => {
     const statusMessages: Record<string, string> = {
@@ -204,61 +192,8 @@ export function OrdersPanel() {
     printWindow.document.close();
   };
 
-  // Payment method summaries
-  const paymentSummaries = useMemo(() => {
-    const methods = ['pix', 'cash', 'card_debit', 'card_credit'] as const;
-    return methods.map((m) => {
-      const filtered = orders.filter((o) => o.payment_method === m);
-      return {
-        method: m,
-        label: paymentLabels[m],
-        count: filtered.length,
-        total: filtered.reduce((s, o) => s + Number(o.total), 0),
-      };
-    });
-  }, [orders]);
-
-  const dayTotal = orders.reduce((sum, o) => sum + Number(o.total), 0);
-
   return (
     <div className="space-y-4 mt-4">
-      {/* Date picker */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className={cn('justify-start text-left font-normal', !selectedDate && 'text-muted-foreground')}>
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {isToday ? 'Hoje' : formatDateLabel(selectedDate)}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(d) => d && setSelectedDate(d)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-        {!isToday && (
-          <Button variant="ghost" size="sm" onClick={() => setSelectedDate(new Date())}>Voltar p/ hoje</Button>
-        )}
-      </div>
-
-      {/* Summary cards by payment */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="rounded-xl border bg-card p-3 text-center">
-          <p className="text-2xl font-bold text-primary">{formatPrice(dayTotal)}</p>
-          <p className="text-xs text-muted-foreground">Total ({orders.length} pedidos)</p>
-        </div>
-        {paymentSummaries.map((ps) => (
-          <div key={ps.method} className="rounded-xl border bg-card p-3 text-center">
-            <p className="text-lg font-bold">{formatPrice(ps.total)}</p>
-            <p className="text-xs text-muted-foreground">{ps.label} ({ps.count})</p>
-          </div>
-        ))}
-      </div>
-
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
         <Select value={filter} onValueChange={setFilter}>

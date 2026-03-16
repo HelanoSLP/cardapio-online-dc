@@ -135,7 +135,7 @@ export function MenuPanel() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { toast.error('Selecione um arquivo de imagem'); return; }
-    if (file.size > 2 * 1024 * 1024) { toast.error('Imagem deve ter no máximo 2MB'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Imagem deve ter no máximo 10MB'); return; }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };

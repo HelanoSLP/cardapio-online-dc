@@ -51,7 +51,7 @@ const Index = () => {
     );
   }, [isGrouped, products]);
 
-  const hasBanner = settings?.banner_url && settings.banner_url.length > 0;
+  const hasWallpaper = settings?.wallpaper_url && settings.wallpaper_url.length > 0;
   const isOpen = settings?.store_open !== false;
 
   const [mobileTab, setMobileTab] = useState<'menu' | 'promos'>('menu');
@@ -116,24 +116,24 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header - banner with more height, no subtitle text */}
-      <header
-        className="sticky top-0 z-40 bg-primary text-primary-foreground"
-        style={hasBanner ? {
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url(${settings!.banner_url})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        } : undefined}
-      >
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-8">
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} alt={settings.store_name} className="h-14 object-contain" />
-          ) : (
-            <h1 className="text-2xl tracking-tight">😋 {settings?.store_name || 'Delícias Caseiras'}</h1>
-          )}
-        </div>
-      </header>
+    <div
+      className="min-h-screen pb-24"
+      style={hasWallpaper ? {
+        backgroundImage: `url(${settings!.wallpaper_url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+      } : undefined}
+    >
+      {/* Logo centered at top */}
+      <div className={`flex justify-center py-4 ${hasWallpaper ? '' : 'bg-background'}`}>
+        {settings?.logo_url ? (
+          <img src={settings.logo_url} alt={settings.store_name} className="h-28 object-contain" />
+        ) : (
+          <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-28 object-contain" />
+        )}
+      </div>
 
       {/* Store closed banner */}
       {!isOpen && (
@@ -144,7 +144,7 @@ const Index = () => {
       )}
 
       {/* Categories */}
-      <div className="bg-background border-b">
+      <div className={`border-b ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm' : 'bg-background'}`}>
         <div className="mx-auto max-w-5xl">
           {loadingCategories ? (
             <div className="flex gap-2 p-3 overflow-x-auto">
@@ -162,10 +162,10 @@ const Index = () => {
 
       {/* Desktop/Landscape: 2-col products + sidebar promos */}
       <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
-        <main className="flex-1 min-w-0">
+        <main className={`flex-1 min-w-0 ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm rounded-xl p-4' : ''}`}>
           {productsContent}
         </main>
-        <aside className="w-72 shrink-0">
+        <aside className={`w-72 shrink-0 ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm rounded-xl p-4' : ''}`}>
           <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
           {promoBannersContent}
         </aside>
@@ -173,7 +173,7 @@ const Index = () => {
 
       {/* Mobile Portrait: tabs for menu/promos */}
       <div className="landscape:hidden lg:hidden">
-        <div className="flex border-b bg-background">
+        <div className={`flex border-b ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm' : 'bg-background'}`}>
           <button
             onClick={() => setMobileTab('menu')}
             className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
@@ -196,7 +196,7 @@ const Index = () => {
           </button>
         </div>
 
-        <main className="mx-auto max-w-lg px-4 py-4">
+        <main className={`mx-auto max-w-lg px-4 py-4 ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm mx-2 rounded-xl mt-2' : ''}`}>
           {mobileTab === 'menu' ? productsContent : promoBannersContent}
         </main>
       </div>

@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface Settings {
   store_name: string;
   logo_url: string;
-  banner_url: string;
+  wallpaper_url: string;
   delivery_fee: string;
   cashback_enabled: string;
   cashback_threshold: string;
@@ -22,7 +22,7 @@ export function SettingsPanel() {
   const [settings, setSettings] = useState<Settings>({
     store_name: 'Delícias Caseiras',
     logo_url: '',
-    banner_url: '',
+    wallpaper_url: '',
     delivery_fee: '7',
     cashback_enabled: 'false',
     cashback_threshold: '100',
@@ -32,10 +32,10 @@ export function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [wallpaperFile, setWallpaperFile] = useState<File | null>(null);
+  const [wallpaperPreview, setWallpaperPreview] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -45,20 +45,26 @@ export function SettingsPanel() {
     const { data } = await supabase.from('store_settings').select('key, value');
     if (data) {
       const s: any = { ...settings };
-      data.forEach((row: any) => { s[row.key] = row.value; });
+      data.forEach((row: any) => {
+        // Map old banner_url to wallpaper_url
+        if (row.key === 'banner_url') s.wallpaper_url = row.value;
+        else if (row.key === 'wallpaper_url') s.wallpaper_url = row.value;
+        else s[row.key] = row.value;
+      });
       setSettings(s);
       if (s.logo_url) setLogoPreview(s.logo_url);
-      if (s.banner_url) setBannerPreview(s.banner_url);
+      if (s.wallpaper_url) setWallpaperPreview(s.wallpaper_url);
     }
   };
 
-  const handleImageSelect = (type: 'logo' | 'banner') => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = (type: 'logo' | 'wallpaper') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { toast.error('Selecione uma imagem'); return; }
-    if (file.size > 2 * 1024 * 1024) { toast.error('Máximo 2MB'); return; }
+    const maxMB = 10;
+    if (file.size > maxMB * 1024 * 1024) { toast.error(`Máximo ${maxMB}MB`); return; }
     if (type === 'logo') { setLogoFile(file); setLogoPreview(URL.createObjectURL(file)); }
-    else { setBannerFile(file); setBannerPreview(URL.createObjectURL(file)); }
+    else { setWallpaperFile(file); setWallpaperPreview(URL.createObjectURL(file)); }
   };
 
   const uploadImage = async (file: File, name: string): Promise<string> => {
@@ -74,16 +80,16 @@ export function SettingsPanel() {
     setSaving(true);
     try {
       let logoUrl = settings.logo_url;
-      let bannerUrl = settings.banner_url;
+      let wallpaperUrl = settings.wallpaper_url;
 
       if (logoFile) logoUrl = await uploadImage(logoFile, 'logo');
-      if (bannerFile) bannerUrl = await uploadImage(bannerFile, 'banner');
+      if (wallpaperFile) wallpaperUrl = await uploadImage(wallpaperFile, 'wallpaper');
 
       const updates = [
         { key: 'store_name', value: settings.store_name },
         { key: 'store_name_type', value: 'logo' },
         { key: 'logo_url', value: logoUrl },
-        { key: 'banner_url', value: bannerUrl },
+        { key: 'wallpaper_url', value: wallpaperUrl },
         { key: 'delivery_fee', value: settings.delivery_fee },
         { key: 'cashback_enabled', value: settings.cashback_enabled },
         { key: 'cashback_threshold', value: settings.cashback_threshold },
@@ -96,7 +102,7 @@ export function SettingsPanel() {
       }
 
       setLogoFile(null);
-      setBannerFile(null);
+      setWallpaperFile(null);
       toast.success('Configurações salvas!');
       fetchSettings();
     } catch (err) {
@@ -144,7 +150,7 @@ export function SettingsPanel() {
         </div>
 
         <div>
-          <Label>Logo</Label>
+          <Label>Logo (máx. 10MB)</Label>
           <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect('logo')} />
           {logoPreview ? (
             <div className="relative mt-2">
@@ -162,21 +168,22 @@ export function SettingsPanel() {
         </div>
 
         <div>
-          <Label>Banner de fundo (header)</Label>
-          <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect('banner')} />
-          {bannerPreview ? (
+          <Label>Papel de parede do site (máx. 10MB)</Label>
+          <input ref={wallpaperInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect('wallpaper')} />
+          {wallpaperPreview ? (
             <div className="relative mt-2">
-              <img src={bannerPreview} alt="Banner" className="w-full h-32 object-cover rounded-lg border" />
-              <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setBannerFile(null); setBannerPreview(null); update('banner_url', ''); }}>
+              <img src={wallpaperPreview} alt="Papel de parede" className="w-full h-32 object-cover rounded-lg border" />
+              <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={() => { setWallpaperFile(null); setWallpaperPreview(null); update('wallpaper_url', ''); }}>
                 <X className="h-3 w-3" />
               </Button>
             </div>
           ) : (
-            <button type="button" onClick={() => bannerInputRef.current?.click()} className="mt-2 w-full h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors">
+            <button type="button" onClick={() => wallpaperInputRef.current?.click()} className="mt-2 w-full h-24 rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors">
               <ImagePlus className="h-6 w-6 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Upload banner personalizado</span>
+              <span className="text-xs text-muted-foreground">Upload papel de parede</span>
             </button>
           )}
+          <p className="text-xs text-muted-foreground mt-1">A imagem será usada como fundo do site do cardápio.</p>
         </div>
       </section>
 
