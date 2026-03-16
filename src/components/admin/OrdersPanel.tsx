@@ -116,7 +116,7 @@ export function OrdersPanel() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [filter, paymentFilter, selectedDate]);
+  }, [filter, paymentFilter]);
 
   const getWhatsAppMessage = (order: Order, status: string): string => {
     const statusMessages: Record<string, string> = {
