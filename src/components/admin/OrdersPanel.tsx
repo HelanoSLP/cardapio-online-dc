@@ -62,14 +62,6 @@ export function OrdersPanel() {
   const formatDate = (date: string) =>
     new Date(date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
-  const formatDateLabel = (date: Date) =>
-    date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
-
-  const isToday = useMemo(() => {
-    const today = new Date();
-    return selectedDate.toDateString() === today.toDateString();
-  }, [selectedDate]);
-
   const fetchOrders = async () => {
     const start = new Date(selectedDate);
     start.setHours(0, 0, 0, 0);
