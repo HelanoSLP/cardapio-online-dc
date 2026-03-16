@@ -33,6 +33,9 @@ const maskWhatsApp = (phone: string) => {
   return digits.slice(0, 2) + '****' + digits.slice(-4);
 };
 
+const escHtml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const sendWhatsApp = async (phone: string, message: string) => {
   try {
     const { data, error } = await supabase.functions.invoke('send-whatsapp', {
