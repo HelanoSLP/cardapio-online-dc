@@ -169,18 +169,17 @@ export default function Checkout() {
 
       // Mark coupon as used
       if (couponId) {
-        await supabase.from('coupons').update({ used: true, used_at: new Date().toISOString() }).eq('id', couponId);
+        await supabase.rpc('use_coupon', { p_coupon_id: couponId });
       }
 
       // Generate cashback coupon if eligible
+      let cashbackCode: string | null = null;
       if (settings?.cashback_enabled && subtotal >= settings.cashback_threshold) {
-        const code = `CB${Date.now().toString(36).toUpperCase()}`;
-        await supabase.from('coupons').insert({
-          code,
-          customer_whatsapp: form.whatsapp.trim(),
-          discount_value: settings.cashback_value,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        const { data: codeResult } = await supabase.rpc('generate_cashback_coupon', {
+          p_whatsapp: form.whatsapp.trim(),
+          p_discount: settings.cashback_value,
         });
+        cashbackCode = codeResult as string;
 
         // Notify about cashback via WhatsApp
         try {
