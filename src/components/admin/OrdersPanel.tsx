@@ -181,21 +181,21 @@ export function OrdersPanel() {
         .notes { font-style: italic; font-size: 11px; margin-left: 10px; }
       </style></head><body>
       <h1>😋 Delícias Caseiras</h1>
-      <p style="text-align:center">${formatDate(order.created_at)}</p>
+      <p style="text-align:center">${escHtml(formatDate(order.created_at))}</p>
       <hr/>
-      <p><b>Cliente:</b> ${order.customer_name}</p>
-      <p><b>Endereço:</b> ${order.address_street}, ${order.address_number} - ${order.address_neighborhood}</p>
-      ${order.address_reference ? `<p><b>Ref:</b> ${order.address_reference}</p>` : ''}
+      <p><b>Cliente:</b> ${escHtml(order.customer_name)}</p>
+      <p><b>Endereço:</b> ${escHtml(order.address_street)}, ${escHtml(order.address_number)} - ${escHtml(order.address_neighborhood)}</p>
+      ${order.address_reference ? `<p><b>Ref:</b> ${escHtml(order.address_reference)}</p>` : ''}
       <hr/>
       ${items.map((i) => `
-        <div class="item"><span>${i.quantity}x ${i.product_name}</span><span>${formatPrice(i.unit_price * i.quantity)}</span></div>
-        ${i.notes ? `<div class="notes">${i.notes}</div>` : ''}
+        <div class="item"><span>${i.quantity}x ${escHtml(i.product_name)}</span><span>${formatPrice(i.unit_price * i.quantity)}</span></div>
+        ${i.notes ? `<div class="notes">${escHtml(i.notes)}</div>` : ''}
       `).join('')}
       <hr/>
       <div class="item total"><span>TOTAL</span><span>${formatPrice(order.total)}</span></div>
-      <p><b>Pagamento:</b> ${paymentLabels[order.payment_method]}</p>
+      <p><b>Pagamento:</b> ${escHtml(paymentLabels[order.payment_method])}</p>
       ${order.change_for ? `<p><b>Troco para:</b> ${formatPrice(order.change_for)}</p>` : ''}
-      ${order.notes ? `<p><b>Obs:</b> ${order.notes}</p>` : ''}
+      ${order.notes ? `<p><b>Obs:</b> ${escHtml(order.notes)}</p>` : ''}
       <hr/>
       <p style="text-align:center">Obrigado pela preferência!</p>
       <script>window.print();window.close();</script>
