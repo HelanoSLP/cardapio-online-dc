@@ -63,15 +63,15 @@ export function OrdersPanel() {
     new Date(date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 
   const fetchOrders = async () => {
-    const start = new Date(selectedDate);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(selectedDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date();
     end.setHours(23, 59, 59, 999);
 
     let query = supabase
       .from('orders')
       .select('*')
-      .gte('created_at', start.toISOString())
+      .gte('created_at', today.toISOString())
       .lte('created_at', end.toISOString())
       .order('created_at', { ascending: false });
 
