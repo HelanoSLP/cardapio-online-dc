@@ -391,12 +391,21 @@ export type Database = {
         }
         Returns: Json
       }
+      generate_cashback_coupon: {
+        Args: { p_discount: number; p_whatsapp: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      use_coupon: { Args: { p_coupon_id: string }; Returns: undefined }
+      validate_coupon: {
+        Args: { p_code: string; p_whatsapp: string }
+        Returns: Json
       }
     }
     Enums: {

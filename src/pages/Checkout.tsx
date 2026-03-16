@@ -82,21 +82,20 @@ export default function Checkout() {
 
   const applyCoupon = async () => {
     if (!couponCode.trim()) { toast.error('Digite o código do cupom'); return; }
-    const { data, error } = await supabase
-      .from('coupons')
-      .select('*')
-      .eq('code', couponCode.trim().toUpperCase())
-      .eq('used', false)
-      .maybeSingle();
+    if (!form.whatsapp.trim()) { toast.error('Preencha seu WhatsApp antes de aplicar o cupom'); return; }
+    const { data, error } = await supabase.rpc('validate_coupon', {
+      p_code: couponCode.trim(),
+      p_whatsapp: form.whatsapp.trim(),
+    });
 
-    if (error || !data) {
-      toast.error('Cupom inválido ou já utilizado');
+    if (error || !data || !(data as any).valid) {
+      toast.error((data as any)?.error || 'Cupom inválido');
       return;
     }
-    setCouponDiscount(Number(data.discount_value));
+    setCouponDiscount(Number((data as any).discount_value));
     setCouponApplied(true);
-    setCouponId(data.id);
-    toast.success(`Cupom aplicado! Desconto de ${formatPrice(Number(data.discount_value))}`);
+    setCouponId((data as any).id);
+    toast.success(`Cupom aplicado! Desconto de ${formatPrice(Number((data as any).discount_value))}`);
   };
 
   const removeCoupon = () => {
@@ -170,25 +169,24 @@ export default function Checkout() {
 
       // Mark coupon as used
       if (couponId) {
-        await supabase.from('coupons').update({ used: true, used_at: new Date().toISOString() }).eq('id', couponId);
+        await supabase.rpc('use_coupon', { p_coupon_id: couponId });
       }
 
       // Generate cashback coupon if eligible
+      let cashbackCode: string | null = null;
       if (settings?.cashback_enabled && subtotal >= settings.cashback_threshold) {
-        const code = `CB${Date.now().toString(36).toUpperCase()}`;
-        await supabase.from('coupons').insert({
-          code,
-          customer_whatsapp: form.whatsapp.trim(),
-          discount_value: settings.cashback_value,
-          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        const { data: codeResult } = await supabase.rpc('generate_cashback_coupon', {
+          p_whatsapp: form.whatsapp.trim(),
+          p_discount: settings.cashback_value,
         });
+        cashbackCode = codeResult as string;
 
         // Notify about cashback via WhatsApp
         try {
           await supabase.functions.invoke('send-whatsapp', {
             body: {
               phone: form.whatsapp.trim(),
-              message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${code}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
+              message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${cashbackCode}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
             },
           });
         } catch (e) { console.error('Cashback WhatsApp error:', e); }
