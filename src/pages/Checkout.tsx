@@ -186,7 +186,7 @@ export default function Checkout() {
           await supabase.functions.invoke('send-whatsapp', {
             body: {
               phone: form.whatsapp.trim(),
-              message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${code}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
+              message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${cashbackCode}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
             },
           });
         } catch (e) { console.error('Cashback WhatsApp error:', e); }
