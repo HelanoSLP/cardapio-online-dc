@@ -55,7 +55,6 @@ export function OrdersPanel() {
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
   const [filter, setFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
