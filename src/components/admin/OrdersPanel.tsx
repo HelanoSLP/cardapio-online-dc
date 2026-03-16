@@ -195,61 +195,8 @@ export function OrdersPanel() {
     printWindow.document.close();
   };
 
-  // Payment method summaries
-  const paymentSummaries = useMemo(() => {
-    const methods = ['pix', 'cash', 'card_debit', 'card_credit'] as const;
-    return methods.map((m) => {
-      const filtered = orders.filter((o) => o.payment_method === m);
-      return {
-        method: m,
-        label: paymentLabels[m],
-        count: filtered.length,
-        total: filtered.reduce((s, o) => s + Number(o.total), 0),
-      };
-    });
-  }, [orders]);
-
-  const dayTotal = orders.reduce((sum, o) => sum + Number(o.total), 0);
-
   return (
     <div className="space-y-4 mt-4">
-      {/* Date picker */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className={cn('justify-start text-left font-normal', !selectedDate && 'text-muted-foreground')}>
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {isToday ? 'Hoje' : formatDateLabel(selectedDate)}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(d) => d && setSelectedDate(d)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-        {!isToday && (
-          <Button variant="ghost" size="sm" onClick={() => setSelectedDate(new Date())}>Voltar p/ hoje</Button>
-        )}
-      </div>
-
-      {/* Summary cards by payment */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="rounded-xl border bg-card p-3 text-center">
-          <p className="text-2xl font-bold text-primary">{formatPrice(dayTotal)}</p>
-          <p className="text-xs text-muted-foreground">Total ({orders.length} pedidos)</p>
-        </div>
-        {paymentSummaries.map((ps) => (
-          <div key={ps.method} className="rounded-xl border bg-card p-3 text-center">
-            <p className="text-lg font-bold">{formatPrice(ps.total)}</p>
-            <p className="text-xs text-muted-foreground">{ps.label} ({ps.count})</p>
-          </div>
-        ))}
-      </div>
-
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
         <Select value={filter} onValueChange={setFilter}>
