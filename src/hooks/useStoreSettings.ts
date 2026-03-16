@@ -5,7 +5,7 @@ export interface StoreSettings {
   store_name: string;
   store_name_type: 'text' | 'logo';
   logo_url: string;
-  banner_url: string;
+  wallpaper_url: string;
   delivery_fee: number;
   cashback_enabled: boolean;
   cashback_threshold: number;
@@ -17,7 +17,7 @@ const DEFAULTS: StoreSettings = {
   store_name: 'Delícias Caseiras',
   store_name_type: 'logo',
   logo_url: '',
-  banner_url: '',
+  wallpaper_url: '',
   delivery_fee: 7,
   cashback_enabled: false,
   cashback_threshold: 100,
@@ -39,7 +39,7 @@ export function useStoreSettings() {
         store_name: map.store_name || DEFAULTS.store_name,
         store_name_type: (map.store_name_type as 'text' | 'logo') || 'logo',
         logo_url: map.logo_url || '',
-        banner_url: map.banner_url || '',
+        wallpaper_url: map.wallpaper_url || map.banner_url || '',
         delivery_fee: parseFloat(map.delivery_fee) || DEFAULTS.delivery_fee,
         cashback_enabled: map.cashback_enabled === 'true',
         cashback_threshold: parseFloat(map.cashback_threshold) || DEFAULTS.cashback_threshold,
