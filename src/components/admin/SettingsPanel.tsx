@@ -22,7 +22,7 @@ export function SettingsPanel() {
   const [settings, setSettings] = useState<Settings>({
     store_name: 'Delícias Caseiras',
     logo_url: '',
-    wallpaper_url: '',
+    wallpaper_url: undefined,
     delivery_fee: '7',
     cashback_enabled: 'false',
     cashback_threshold: '100',
