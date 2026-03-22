@@ -135,7 +135,7 @@ const Index = () => {
       )}
 
       {/* Categories */}
-      <div className={`border-b ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm' : 'bg-background'}`}>
+      <div className="border-b bg-white">
         <div className="mx-auto max-w-5xl">
           {loadingCategories ? (
             <div className="flex gap-2 p-3 overflow-x-auto">
