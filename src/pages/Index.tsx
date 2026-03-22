@@ -125,9 +125,9 @@ const Index = () => {
         <header className="border-b bg-primary text-primary-foreground">
           <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
             {settings?.logo_url ? (
-              <img src={settings.logo_url} alt={settings.store_name} className="h-8 object-contain" />
+              <img src={settings.logo_url} alt={settings.store_name} className="h-12 object-contain" />
             ) : (
-              <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-8 object-contain" />
+              <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-12 object-contain" />
             )}
             <span className="text-sm font-bold text-white">Cardápio online da DC</span>
           </div>
