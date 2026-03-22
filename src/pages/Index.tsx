@@ -51,7 +51,7 @@ const Index = () => {
     );
   }, [isGrouped, products]);
 
-  const hasWallpaper = settings?.wallpaper_url && settings.wallpaper_url.length > 0;
+  const isOpen = settings?.store_open !== false;
   const isOpen = settings?.store_open !== false;
 
   const [mobileTab, setMobileTab] = useState<'menu' | 'promos'>('menu');
