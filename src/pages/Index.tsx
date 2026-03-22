@@ -125,8 +125,8 @@ const Index = () => {
         className="flex justify-center py-8 overflow-hidden"
         style={{
           backgroundImage: `url(${headerPattern})`,
-          backgroundSize: '250px',
-          backgroundRepeat: 'repeat',
+          backgroundSize: 'cover',
+          backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
         }}
       >
