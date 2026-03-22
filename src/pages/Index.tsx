@@ -123,7 +123,7 @@ const Index = () => {
       <div
         className="flex justify-center py-6"
         style={{
-          backgroundImage: 'url(/images/pattern-bg.jpg)',
+          backgroundImage: 'url(/images/pattern-bg.png)',
           backgroundSize: '300px',
           backgroundRepeat: 'repeat',
         }}
