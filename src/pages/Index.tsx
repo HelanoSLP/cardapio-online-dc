@@ -119,53 +119,45 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-24 bg-white">
-      {/* Header bar */}
-      <header className="sticky top-0 z-40 border-b bg-primary text-primary-foreground">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          {settings?.logo_url ? (
-            <img src={settings.logo_url} alt={settings.store_name} className="h-8 object-contain" />
-          ) : (
-            <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-8 object-contain" />
-          )}
-          <span className="text-sm font-bold text-white">Cardápio online da DC</span>
+      {/* Sticky top section: header + categories + tabs */}
+      <div className="sticky top-0 z-40">
+        {/* Header bar */}
+        <header className="border-b bg-primary text-primary-foreground">
+          <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+            {settings?.logo_url ? (
+              <img src={settings.logo_url} alt={settings.store_name} className="h-8 object-contain" />
+            ) : (
+              <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-8 object-contain" />
+            )}
+            <span className="text-sm font-bold text-white">Cardápio online da DC</span>
+          </div>
+        </header>
+
+        {/* Store closed banner */}
+        {!isOpen && (
+          <div className="bg-destructive text-destructive-foreground text-center py-3 px-4">
+            <p className="text-sm font-bold">🔴 Estamos fechados no momento</p>
+            <p className="text-xs opacity-80 mt-0.5">Confira nosso cardápio e volte quando estivermos abertos!</p>
+          </div>
+        )}
+
+        {/* Categories */}
+        <div className="border-b bg-white">
+          <div className="mx-auto max-w-5xl">
+            {loadingCategories ? (
+              <div className="flex gap-2 p-3 overflow-x-auto">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />
+                ))}
+              </div>
+            ) : (
+              <CategoryBar items={barItems} active={activeKey} onSelect={setActiveKey} />
+            )}
+          </div>
         </div>
-      </header>
 
-      {/* Store closed banner */}
-      {!isOpen && (
-        <div className="bg-destructive text-destructive-foreground text-center py-3 px-4">
-          <p className="text-sm font-bold">🔴 Estamos fechados no momento</p>
-          <p className="text-xs opacity-80 mt-0.5">Confira nosso cardápio e volte quando estivermos abertos!</p>
-        </div>
-      )}
-
-      {/* Categories */}
-      <div className="border-b bg-white">
-        <div className="mx-auto max-w-5xl">
-          {loadingCategories ? (
-            <div className="flex gap-2 p-3 overflow-x-auto">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />
-              ))}
-            </div>
-          ) : (
-            <CategoryBar items={barItems} active={activeKey} onSelect={setActiveKey} />
-          )}
-        </div>
-      </div>
-
-      {/* Desktop/Landscape: 2-col products + sidebar promos */}
-      <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
-        <main className="flex-1 min-w-0">{productsContent}</main>
-        <aside className="w-72 shrink-0">
-          <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
-          {promoBannersContent}
-        </aside>
-      </div>
-
-      {/* Mobile Portrait: tabs for menu/promos */}
-      <div className="landscape:hidden lg:hidden">
-        <div className="flex border-b bg-white">
+        {/* Mobile tabs */}
+        <div className="landscape:hidden lg:hidden flex border-b bg-white">
           <button
             onClick={() => setMobileTab("menu")}
             className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
@@ -183,7 +175,19 @@ const Index = () => {
             🔥 Promoções
           </button>
         </div>
+      </div>
 
+      {/* Desktop/Landscape: 2-col products + sidebar promos */}
+      <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
+        <main className="flex-1 min-w-0">{productsContent}</main>
+        <aside className="w-72 shrink-0">
+          <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
+          {promoBannersContent}
+        </aside>
+      </div>
+
+      {/* Mobile Portrait: content */}
+      <div className="landscape:hidden lg:hidden">
         <main className="mx-auto max-w-lg px-4 py-4">
           {mobileTab === "menu" ? productsContent : promoBannersContent}
         </main>
