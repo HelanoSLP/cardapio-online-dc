@@ -1,13 +1,13 @@
-import { useState, useMemo } from 'react';
-import { useCategories, useProducts, useCategoryBarItems } from '@/hooks/useMenu';
-import { useStoreSettings } from '@/hooks/useStoreSettings';
-import { CategoryBar } from '@/components/menu/CategoryBar';
-import { ProductCard } from '@/components/menu/ProductCard';
-import { CartFloatingButton } from '@/components/cart/CartFloatingButton';
-import { CartDrawer } from '@/components/cart/CartDrawer';
-import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo } from "react";
+import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
+import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { CategoryBar } from "@/components/menu/CategoryBar";
+import { ProductCard } from "@/components/menu/ProductCard";
+import { CartFloatingButton } from "@/components/cart/CartFloatingButton";
+import { CartDrawer } from "@/components/cart/CartDrawer";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const Index = () => {
   const [activeKey, setActiveKey] = useState<string | undefined>();
@@ -25,14 +25,14 @@ const Index = () => {
 
   // Fetch active banner promotions
   const { data: bannerPromos } = useQuery({
-    queryKey: ['active-banners'],
+    queryKey: ["active-banners"],
     queryFn: async () => {
       const { data } = await supabase
-        .from('promotions')
-        .select('*')
-        .eq('type', 'banner')
-        .eq('active', true)
-        .order('created_at', { ascending: false });
+        .from("promotions")
+        .select("*")
+        .eq("type", "banner")
+        .eq("active", true)
+        .order("created_at", { ascending: false });
       return data || [];
     },
   });
@@ -47,44 +47,47 @@ const Index = () => {
       groups[catName].push(p);
     }
     return Object.entries(groups).sort(
-      (a, b) => (a[1][0]?.categories.sort_order ?? 0) - (b[1][0]?.categories.sort_order ?? 0)
+      (a, b) => (a[1][0]?.categories.sort_order ?? 0) - (b[1][0]?.categories.sort_order ?? 0),
     );
   }, [isGrouped, products]);
 
   const isOpen = settings?.store_open !== false;
 
-  const [mobileTab, setMobileTab] = useState<'menu' | 'promos'>('menu');
+  const [mobileTab, setMobileTab] = useState<"menu" | "promos">("menu");
 
-  const promoBannersContent = bannerPromos && bannerPromos.length > 0 ? (
-    <div className="space-y-3">
-      {bannerPromos.map((promo: any) => (
-        <div key={promo.id} className="rounded-xl overflow-hidden border">
-          {promo.banner_image_url ? (
-            <div className="relative">
-              <img src={promo.banner_image_url} alt={promo.title} className="w-full h-32 object-cover" />
-              {promo.banner_text && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-3">
-                  <p className="text-sm font-bold text-white">{promo.banner_text}</p>
-                </div>
-              )}
-            </div>
-          ) : promo.banner_text ? (
-            <div className="bg-gradient-to-r from-primary to-secondary p-4 text-center">
-              <p className="text-sm font-bold text-primary-foreground">{promo.banner_text}</p>
-            </div>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  ) : (
-    <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma promoção ativa no momento.</p>
-  );
+  const promoBannersContent =
+    bannerPromos && bannerPromos.length > 0 ? (
+      <div className="space-y-3">
+        {bannerPromos.map((promo: any) => (
+          <div key={promo.id} className="rounded-xl overflow-hidden border">
+            {promo.banner_image_url ? (
+              <div className="relative">
+                <img src={promo.banner_image_url} alt={promo.title} className="w-full h-32 object-cover" />
+                {promo.banner_text && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-3">
+                    <p className="text-sm font-bold text-white">{promo.banner_text}</p>
+                  </div>
+                )}
+              </div>
+            ) : promo.banner_text ? (
+              <div className="bg-gradient-to-r from-primary to-secondary p-4 text-center">
+                <p className="text-sm font-bold text-primary-foreground">{promo.banner_text}</p>
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma promoção ativa no momento.</p>
+    );
 
   const productsContent = (
     <>
       {loadingProducts ? (
         <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
-          {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
         </div>
       ) : groupedProducts ? (
         <div className="space-y-6">
@@ -138,23 +141,19 @@ const Index = () => {
         <div className="mx-auto max-w-5xl">
           {loadingCategories ? (
             <div className="flex gap-2 p-3 overflow-x-auto">
-              {[1,2,3,4].map(i => <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />)}
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-9 w-24 rounded-full shrink-0" />
+              ))}
             </div>
           ) : (
-            <CategoryBar
-              items={barItems}
-              active={activeKey}
-              onSelect={setActiveKey}
-            />
+            <CategoryBar items={barItems} active={activeKey} onSelect={setActiveKey} />
           )}
         </div>
       </div>
 
       {/* Desktop/Landscape: 2-col products + sidebar promos */}
       <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
-        <main className="flex-1 min-w-0">
-          {productsContent}
-        </main>
+        <main className="flex-1 min-w-0">{productsContent}</main>
         <aside className="w-72 shrink-0">
           <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
           {promoBannersContent}
@@ -165,21 +164,17 @@ const Index = () => {
       <div className="landscape:hidden lg:hidden">
         <div className="flex border-b bg-white">
           <button
-            onClick={() => setMobileTab('menu')}
+            onClick={() => setMobileTab("menu")}
             className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
-              mobileTab === 'menu'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-muted-foreground'
+              mobileTab === "menu" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
             }`}
           >
             🍽️ Cardápio
           </button>
           <button
-            onClick={() => setMobileTab('promos')}
+            onClick={() => setMobileTab("promos")}
             className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
-              mobileTab === 'promos'
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-muted-foreground'
+              mobileTab === "promos" ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
             }`}
           >
             🔥 Promoções
@@ -187,7 +182,7 @@ const Index = () => {
         </div>
 
         <main className="mx-auto max-w-lg px-4 py-4">
-          {mobileTab === 'menu' ? productsContent : promoBannersContent}
+          {mobileTab === "menu" ? productsContent : promoBannersContent}
         </main>
       </div>
 
