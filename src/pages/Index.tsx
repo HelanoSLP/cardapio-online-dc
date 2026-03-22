@@ -120,7 +120,7 @@ const Index = () => {
   return (
     <div className="min-h-screen pb-24 bg-white">
       {/* Header bar */}
-      <header className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'hsl(30 90% 60%)', color: 'white' }}>
+      <header className="sticky top-0 z-40 border-b bg-primary text-primary-foreground">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           {settings?.logo_url ? (
             <img src={settings.logo_url} alt={settings.store_name} className="h-8 object-contain" />
