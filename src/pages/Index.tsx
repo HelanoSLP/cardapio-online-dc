@@ -52,7 +52,6 @@ const Index = () => {
   }, [isGrouped, products]);
 
   const isOpen = settings?.store_open !== false;
-  const isOpen = settings?.store_open !== false;
 
   const [mobileTab, setMobileTab] = useState<'menu' | 'promos'>('menu');
 
