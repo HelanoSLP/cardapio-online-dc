@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import headerPattern from "@/assets/header-pattern.png";
 import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { CategoryBar } from "@/components/menu/CategoryBar";
