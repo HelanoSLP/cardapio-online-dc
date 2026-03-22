@@ -122,11 +122,12 @@ const Index = () => {
     <div className="min-h-screen pb-24 bg-white">
       {/* Logo centered at top with pattern background */}
       <div
-        className="flex justify-center py-8"
+        className="flex justify-center py-8 overflow-hidden"
         style={{
           backgroundImage: `url(${headerPattern})`,
-          backgroundSize: '300px',
+          backgroundSize: '250px',
           backgroundRepeat: 'repeat',
+          backgroundPosition: 'center center',
         }}
       >
         {settings?.logo_url ? (
