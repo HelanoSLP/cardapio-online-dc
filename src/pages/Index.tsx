@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import headerPattern from "@/assets/header-pattern.png";
 import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { CategoryBar } from "@/components/menu/CategoryBar";
@@ -120,22 +119,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-24 bg-white">
-      {/* Logo centered at top with pattern background */}
-      <div
-        className="flex justify-center py-8 overflow-hidden"
-        style={{
-          backgroundImage: `url(${headerPattern})`,
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center center',
-        }}
-      >
-        {settings?.logo_url ? (
-          <img src={settings.logo_url} alt={settings.store_name} className="h-40 object-contain drop-shadow-md" />
-        ) : (
-          <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-40 object-contain drop-shadow-md" />
-        )}
-      </div>
+      {/* Header bar */}
+      <header className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'hsl(30 90% 60%)', color: 'white' }}>
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} alt={settings.store_name} className="h-8 object-contain" />
+          ) : (
+            <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-8 object-contain" />
+          )}
+          <span className="text-sm font-bold text-white">Cardápio online da DC</span>
+        </div>
+      </header>
 
       {/* Store closed banner */}
       {!isOpen && (
