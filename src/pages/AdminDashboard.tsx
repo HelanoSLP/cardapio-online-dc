@@ -54,19 +54,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar with menu button */}
-      <header className="sticky top-0 z-40 bg-sidebar-background text-sidebar-foreground border-b border-sidebar-border">
+      {/* Top bar */}
+      <header className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'hsl(220 15% 20%)', color: 'white' }}>
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)} className="text-sidebar-foreground hover:bg-sidebar-accent">
+            <Button variant="ghost" size="icon" onClick={() => setMenuOpen(!menuOpen)} className="text-white hover:bg-white/10">
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-white">
               <ActiveIcon className="h-4 w-4" />
               <span className="text-sm font-medium">{activeLabel}</span>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-sidebar-foreground hover:bg-sidebar-accent">
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-white hover:bg-white/10">
             <LogOut className="h-4 w-4 mr-2" /> Sair
           </Button>
         </div>
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
 
       {/* Slide-down menu */}
       {menuOpen && (
-        <div className="sticky top-[53px] z-30 bg-sidebar-background border-b border-sidebar-border shadow-lg">
+        <div className="sticky top-[53px] z-30 border-b shadow-lg" style={{ backgroundColor: 'hsl(220 15% 20%)' }}>
           <nav className="max-w-5xl mx-auto px-4 py-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -84,8 +84,8 @@ export default function AdminDashboard() {
                   onClick={() => selectTab(tab.key)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-colors ${
                     activeTab === tab.key
-                      ? 'bg-primary text-primary-foreground font-semibold'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                      ? 'bg-primary text-white font-semibold'
+                      : 'text-gray-200 hover:bg-white/10'
                   }`}
                 >
                   <Icon className="h-5 w-5" />

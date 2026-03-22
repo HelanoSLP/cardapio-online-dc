@@ -116,18 +116,9 @@ const Index = () => {
   );
 
   return (
-    <div
-      className="min-h-screen pb-24"
-      style={hasWallpaper ? {
-        backgroundImage: `url(${settings!.wallpaper_url})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-      } : undefined}
-    >
+    <div className="min-h-screen pb-24 bg-white">
       {/* Logo centered at top */}
-      <div className={`flex justify-center py-4 ${hasWallpaper ? '' : 'bg-background'}`}>
+      <div className="flex justify-center py-4 bg-white">
         {settings?.logo_url ? (
           <img src={settings.logo_url} alt={settings.store_name} className="h-28 object-contain" />
         ) : (
