@@ -32,10 +32,7 @@ export function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [wallpaperFile, setWallpaperFile] = useState<File | null>(null);
-  const [wallpaperPreview, setWallpaperPreview] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const wallpaperInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSettings();
