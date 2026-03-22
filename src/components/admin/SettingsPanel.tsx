@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface Settings {
   store_name: string;
   logo_url: string;
-  wallpaper_url: string;
+  wallpaper_url?: string;
   delivery_fee: string;
   cashback_enabled: string;
   cashback_threshold: string;
