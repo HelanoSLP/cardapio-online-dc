@@ -44,13 +44,8 @@ export function SettingsPanel() {
       const s: any = { ...settings };
       data.forEach((row: any) => {
         // Map old banner_url to wallpaper_url
-        if (row.key === 'banner_url') s.wallpaper_url = row.value;
-        else if (row.key === 'wallpaper_url') s.wallpaper_url = row.value;
+        if (row.key === 'banner_url' || row.key === 'wallpaper_url') { /* skip */ }
         else s[row.key] = row.value;
-      });
-      setSettings(s);
-      if (s.logo_url) setLogoPreview(s.logo_url);
-      if (s.wallpaper_url) setWallpaperPreview(s.wallpaper_url);
     }
   };
 
