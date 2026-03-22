@@ -119,12 +119,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-24 bg-white">
-      {/* Logo centered at top */}
-      <div className="flex justify-center py-4 bg-white">
+      {/* Logo centered at top with pattern background */}
+      <div
+        className="flex justify-center py-6"
+        style={{
+          backgroundImage: 'url(/images/pattern-bg.jpg)',
+          backgroundSize: '300px',
+          backgroundRepeat: 'repeat',
+        }}
+      >
         {settings?.logo_url ? (
-          <img src={settings.logo_url} alt={settings.store_name} className="h-28 object-contain" />
+          <img src={settings.logo_url} alt={settings.store_name} className="h-28 object-contain drop-shadow-md" />
         ) : (
-          <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-28 object-contain" />
+          <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-28 object-contain drop-shadow-md" />
         )}
       </div>
 
