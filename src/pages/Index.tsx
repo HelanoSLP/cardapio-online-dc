@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import headerPattern from "@/assets/header-pattern.png";
 import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { CategoryBar } from "@/components/menu/CategoryBar";
@@ -121,17 +122,17 @@ const Index = () => {
     <div className="min-h-screen pb-24 bg-white">
       {/* Logo centered at top with pattern background */}
       <div
-        className="flex justify-center py-6"
+        className="flex justify-center py-8"
         style={{
-          backgroundImage: 'url(/images/pattern-bg.png)',
+          backgroundImage: `url(${headerPattern})`,
           backgroundSize: '300px',
           backgroundRepeat: 'repeat',
         }}
       >
         {settings?.logo_url ? (
-          <img src={settings.logo_url} alt={settings.store_name} className="h-28 object-contain drop-shadow-md" />
+          <img src={settings.logo_url} alt={settings.store_name} className="h-40 object-contain drop-shadow-md" />
         ) : (
-          <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-28 object-contain drop-shadow-md" />
+          <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-40 object-contain drop-shadow-md" />
         )}
       </div>
 
