@@ -51,7 +51,6 @@ const Index = () => {
     );
   }, [isGrouped, products]);
 
-  const hasWallpaper = settings?.wallpaper_url && settings.wallpaper_url.length > 0;
   const isOpen = settings?.store_open !== false;
 
   const [mobileTab, setMobileTab] = useState<'menu' | 'promos'>('menu');
@@ -116,18 +115,9 @@ const Index = () => {
   );
 
   return (
-    <div
-      className="min-h-screen pb-24"
-      style={hasWallpaper ? {
-        backgroundImage: `url(${settings!.wallpaper_url})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        backgroundRepeat: 'no-repeat',
-      } : undefined}
-    >
+    <div className="min-h-screen pb-24 bg-white">
       {/* Logo centered at top */}
-      <div className={`flex justify-center py-4 ${hasWallpaper ? '' : 'bg-background'}`}>
+      <div className="flex justify-center py-4 bg-white">
         {settings?.logo_url ? (
           <img src={settings.logo_url} alt={settings.store_name} className="h-28 object-contain" />
         ) : (
@@ -144,7 +134,7 @@ const Index = () => {
       )}
 
       {/* Categories */}
-      <div className={`border-b ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm' : 'bg-background'}`}>
+      <div className="border-b bg-white">
         <div className="mx-auto max-w-5xl">
           {loadingCategories ? (
             <div className="flex gap-2 p-3 overflow-x-auto">
@@ -162,10 +152,10 @@ const Index = () => {
 
       {/* Desktop/Landscape: 2-col products + sidebar promos */}
       <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-4 gap-6">
-        <main className={`flex-1 min-w-0 ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm rounded-xl p-4' : ''}`}>
+        <main className="flex-1 min-w-0">
           {productsContent}
         </main>
-        <aside className={`w-72 shrink-0 ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm rounded-xl p-4' : ''}`}>
+        <aside className="w-72 shrink-0">
           <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
           {promoBannersContent}
         </aside>
@@ -173,7 +163,7 @@ const Index = () => {
 
       {/* Mobile Portrait: tabs for menu/promos */}
       <div className="landscape:hidden lg:hidden">
-        <div className={`flex border-b ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm' : 'bg-background'}`}>
+        <div className="flex border-b bg-white">
           <button
             onClick={() => setMobileTab('menu')}
             className={`flex-1 py-3 text-sm font-medium text-center transition-colors ${
@@ -196,7 +186,7 @@ const Index = () => {
           </button>
         </div>
 
-        <main className={`mx-auto max-w-lg px-4 py-4 ${hasWallpaper ? 'bg-background/90 backdrop-blur-sm mx-2 rounded-xl mt-2' : ''}`}>
+        <main className="mx-auto max-w-lg px-4 py-4">
           {mobileTab === 'menu' ? productsContent : promoBannersContent}
         </main>
       </div>
