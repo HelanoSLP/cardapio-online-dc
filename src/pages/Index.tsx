@@ -128,7 +128,6 @@ const Index = () => {
           backgroundSize: 'cover',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
-          backgroundPosition: 'center center',
         }}
       >
         {settings?.logo_url ? (
