@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
     const siteUrl = 'https://cardapio-online-dc.lovable.app';
 
-    const welcomeMessage = `Olá! 😊 Que bom ter você aqui! 🍕\n\nPara fazer seu pedido de forma rápida e prática, acesse nosso cardápio digital:\n\n🔗 ${siteUrl}\n\nLá você encontra todos os nossos produtos, promoções e pode finalizar seu pedido com facilidade!\n\nEstamos à disposição! 😋`;
+    const welcomeMessage = `Olá, esse é o WhatsApp da DC, ficamos felizes pela sua preferência! 😁\n\nEsse aqui é o nosso cardápio: ${siteUrl}\n\nÉ só clicar e fazer seu pedido. Assim que seu pedido for finalizado, estaremos te enviando toda a atualização do seu pedido por aqui.\n\nFique à vontade! 😁`;
 
     // Format phone for Z-API
     let formattedPhone = phone.replace(/\D/g, '');
