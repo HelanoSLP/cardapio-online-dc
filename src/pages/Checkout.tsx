@@ -117,10 +117,14 @@ export default function Checkout() {
     setCouponId(null);
   };
 
-  // Cleanup polling on unmount
+  const pixTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const PIX_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+  // Cleanup polling and timeout on unmount
   useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pixTimeoutRef.current) clearTimeout(pixTimeoutRef.current);
     };
   }, []);
 
@@ -174,6 +178,8 @@ export default function Checkout() {
 
       if (orderError) throw orderError;
 
+      const orderId = (order as any)?.id;
+
       // Mark coupon as used
       if (couponId) {
         await supabase.rpc('use_coupon', { p_coupon_id: couponId });
@@ -188,30 +194,36 @@ export default function Checkout() {
         });
         cashbackCode = codeResult as string;
 
-        try {
-          await supabase.functions.invoke('send-whatsapp', {
-            body: {
-              phone: form.whatsapp.trim(),
-              message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${cashbackCode}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
-            },
-          });
-        } catch (e) { console.error('Cashback WhatsApp error:', e); }
+        if (orderId) {
+          try {
+            await supabase.functions.invoke('notify-order', {
+              body: {
+                order_id: orderId,
+                phone: form.whatsapp.trim(),
+                message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${cashbackCode}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
+              },
+            });
+          } catch (e) { console.error('Cashback WhatsApp error:', e); }
+        }
       }
 
       // Send confirmation WhatsApp
-      try {
-        const storeName = settings?.store_name || 'Delícias Caseiras';
-        const locationMsg = isPickup
-          ? '🏪 Retirada no local'
-          : `📍 Entrega: ${form.street.trim()}, ${form.number.trim()} - ${form.neighborhood.trim()}`;
-        await supabase.functions.invoke('send-whatsapp', {
-          body: {
-            phone: form.whatsapp.trim(),
-            message: `✅ Olá ${form.name.trim()}! Seu pedido foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher ${storeName}! 😋`,
-          },
-        });
-      } catch (e) {
-        console.error('WhatsApp confirmation error:', e);
+      if (orderId) {
+        try {
+          const storeName = settings?.store_name || 'Delícias Caseiras';
+          const locationMsg = isPickup
+            ? '🏪 Retirada no local'
+            : `📍 Entrega: ${form.street.trim()}, ${form.number.trim()} - ${form.neighborhood.trim()}`;
+          await supabase.functions.invoke('notify-order', {
+            body: {
+              order_id: orderId,
+              phone: form.whatsapp.trim(),
+              message: `✅ Olá ${form.name.trim()}! Seu pedido foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher ${storeName}! 😋`,
+            },
+          });
+        } catch (e) {
+          console.error('WhatsApp confirmation error:', e);
+        }
       }
 
       clearCart();
@@ -224,6 +236,12 @@ export default function Checkout() {
   };
 
   const handleSubmit = async () => {
+    // Check if store is open
+    if (settings?.store_open === false) {
+      toast.error('Desculpe, o estabelecimento está fechado no momento.');
+      return;
+    }
+
     const schema = deliveryType === 'delivery' ? deliverySchema : pickupSchema;
     const result = schema.safeParse(form);
     if (!result.success) {
@@ -268,6 +286,7 @@ export default function Checkout() {
 
             if (statusData?.status === 'approved') {
               if (pollingRef.current) clearInterval(pollingRef.current);
+              if (pixTimeoutRef.current) clearTimeout(pixTimeoutRef.current);
               setCheckingPix(false);
               toast.success('Pagamento confirmado! ✅');
               await finalizeOrder();
@@ -275,7 +294,15 @@ export default function Checkout() {
           } catch (e) {
             console.error('Polling error:', e);
           }
-        }, 5000); // Check every 5 seconds
+        }, 5000);
+
+        // Set 15-minute timeout
+        pixTimeoutRef.current = setTimeout(() => {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setCheckingPix(false);
+          setPixData(null);
+          toast.error('Tempo de pagamento expirado (15 minutos). Tente novamente.');
+        }, PIX_TIMEOUT_MS);
 
         setLoading(false);
       } else {
@@ -304,6 +331,7 @@ export default function Checkout() {
 
   const cancelPix = () => {
     if (pollingRef.current) clearInterval(pollingRef.current);
+    if (pixTimeoutRef.current) clearTimeout(pixTimeoutRef.current);
     setPixData(null);
     setCheckingPix(false);
   };
