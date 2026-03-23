@@ -331,6 +331,7 @@ export default function Checkout() {
 
   const cancelPix = () => {
     if (pollingRef.current) clearInterval(pollingRef.current);
+    if (pixTimeoutRef.current) clearTimeout(pixTimeoutRef.current);
     setPixData(null);
     setCheckingPix(false);
   };
