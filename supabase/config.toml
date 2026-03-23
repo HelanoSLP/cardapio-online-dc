@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.check-pix-status]
 verify_jwt = false
+
+[functions.notify-order]
+verify_jwt = false

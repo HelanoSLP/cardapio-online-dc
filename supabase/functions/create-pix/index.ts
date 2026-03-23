@@ -13,8 +13,33 @@ serve(async (req) => {
   try {
     const { amount, description, payer_email } = await req.json();
 
-    if (!amount || amount <= 0) {
+    // Validate amount
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
       return new Response(JSON.stringify({ error: 'Valor inválido' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Cap maximum amount to prevent abuse
+    if (amount > 100000) {
+      return new Response(JSON.stringify({ error: 'Valor excede o máximo permitido' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate description length
+    if (description && (typeof description !== 'string' || description.length > 200)) {
+      return new Response(JSON.stringify({ error: 'Descrição inválida' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate email format if provided
+    if (payer_email && (typeof payer_email !== 'string' || payer_email.length > 255)) {
+      return new Response(JSON.stringify({ error: 'Email inválido' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -32,7 +57,7 @@ serve(async (req) => {
 
     const body = {
       transaction_amount: amount,
-      description: description || 'Pedido',
+      description: (description || 'Pedido').slice(0, 200),
       payment_method_id: 'pix',
       payer: {
         email: payer_email || 'cliente@email.com',
