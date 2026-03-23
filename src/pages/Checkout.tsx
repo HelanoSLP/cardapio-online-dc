@@ -117,10 +117,14 @@ export default function Checkout() {
     setCouponId(null);
   };
 
-  // Cleanup polling on unmount
+  const pixTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const PIX_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+  // Cleanup polling and timeout on unmount
   useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pixTimeoutRef.current) clearTimeout(pixTimeoutRef.current);
     };
   }, []);
 
