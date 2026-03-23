@@ -178,6 +178,8 @@ export default function Checkout() {
 
       if (orderError) throw orderError;
 
+      const orderId = (order as any)?.id;
+
       // Mark coupon as used
       if (couponId) {
         await supabase.rpc('use_coupon', { p_coupon_id: couponId });
@@ -192,30 +194,36 @@ export default function Checkout() {
         });
         cashbackCode = codeResult as string;
 
-        try {
-          await supabase.functions.invoke('send-whatsapp', {
-            body: {
-              phone: form.whatsapp.trim(),
-              message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${cashbackCode}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
-            },
-          });
-        } catch (e) { console.error('Cashback WhatsApp error:', e); }
+        if (orderId) {
+          try {
+            await supabase.functions.invoke('notify-order', {
+              body: {
+                order_id: orderId,
+                phone: form.whatsapp.trim(),
+                message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${cashbackCode}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
+              },
+            });
+          } catch (e) { console.error('Cashback WhatsApp error:', e); }
+        }
       }
 
       // Send confirmation WhatsApp
-      try {
-        const storeName = settings?.store_name || 'Delícias Caseiras';
-        const locationMsg = isPickup
-          ? '🏪 Retirada no local'
-          : `📍 Entrega: ${form.street.trim()}, ${form.number.trim()} - ${form.neighborhood.trim()}`;
-        await supabase.functions.invoke('send-whatsapp', {
-          body: {
-            phone: form.whatsapp.trim(),
-            message: `✅ Olá ${form.name.trim()}! Seu pedido foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher ${storeName}! 😋`,
-          },
-        });
-      } catch (e) {
-        console.error('WhatsApp confirmation error:', e);
+      if (orderId) {
+        try {
+          const storeName = settings?.store_name || 'Delícias Caseiras';
+          const locationMsg = isPickup
+            ? '🏪 Retirada no local'
+            : `📍 Entrega: ${form.street.trim()}, ${form.number.trim()} - ${form.neighborhood.trim()}`;
+          await supabase.functions.invoke('notify-order', {
+            body: {
+              order_id: orderId,
+              phone: form.whatsapp.trim(),
+              message: `✅ Olá ${form.name.trim()}! Seu pedido foi recebido com sucesso! Em breve começaremos a preparar. 😊\n\n${locationMsg}\n💰 Total: ${formatPrice(orderTotal)}\n\nObrigado por escolher ${storeName}! 😋`,
+            },
+          });
+        } catch (e) {
+          console.error('WhatsApp confirmation error:', e);
+        }
       }
 
       clearCart();
