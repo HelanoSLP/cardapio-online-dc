@@ -236,6 +236,12 @@ export default function Checkout() {
   };
 
   const handleSubmit = async () => {
+    // Check if store is open
+    if (settings?.store_open === false) {
+      toast.error('Desculpe, o estabelecimento está fechado no momento.');
+      return;
+    }
+
     const schema = deliveryType === 'delivery' ? deliverySchema : pickupSchema;
     const result = schema.safeParse(form);
     if (!result.success) {
@@ -280,6 +286,7 @@ export default function Checkout() {
 
             if (statusData?.status === 'approved') {
               if (pollingRef.current) clearInterval(pollingRef.current);
+              if (pixTimeoutRef.current) clearTimeout(pixTimeoutRef.current);
               setCheckingPix(false);
               toast.success('Pagamento confirmado! ✅');
               await finalizeOrder();
@@ -287,7 +294,15 @@ export default function Checkout() {
           } catch (e) {
             console.error('Polling error:', e);
           }
-        }, 5000); // Check every 5 seconds
+        }, 5000);
+
+        // Set 15-minute timeout
+        pixTimeoutRef.current = setTimeout(() => {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setCheckingPix(false);
+          setPixData(null);
+          toast.error('Tempo de pagamento expirado (15 minutos). Tente novamente.');
+        }, PIX_TIMEOUT_MS);
 
         setLoading(false);
       } else {
