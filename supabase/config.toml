@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+[functions.create-pix]
+verify_jwt = false
+
+[functions.check-pix-status]
+verify_jwt = false

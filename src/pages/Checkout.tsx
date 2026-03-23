@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/stores/cartStore';
 import { useStoreSettings } from '@/hooks/useStoreSettings';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { ArrowLeft, MapPin, Store, Tag } from 'lucide-react';
+import { ArrowLeft, MapPin, Store, Tag, Copy, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -46,6 +46,12 @@ const paymentLabels: Record<PaymentMethod, string> = {
   pix: '📱 Pix',
 };
 
+interface PixData {
+  payment_id: string;
+  qr_code: string;
+  qr_code_base64: string;
+}
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCartStore();
@@ -57,6 +63,12 @@ export default function Checkout() {
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponId, setCouponId] = useState<string | null>(null);
+
+  // PIX state
+  const [pixData, setPixData] = useState<PixData | null>(null);
+  const [pixCopied, setPixCopied] = useState(false);
+  const [checkingPix, setCheckingPix] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const deliveryFee = settings?.delivery_fee ?? 7;
 
@@ -105,7 +117,14 @@ export default function Checkout() {
     setCouponId(null);
   };
 
-  if (items.length === 0) {
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, []);
+
+  if (items.length === 0 && !pixData) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <p className="text-muted-foreground mb-4">Seu carrinho está vazio</p>
@@ -118,19 +137,7 @@ export default function Checkout() {
   const deliveryTotal = deliveryType === 'delivery' ? deliveryFee : 0;
   const orderTotal = Math.max(0, subtotal + deliveryTotal - couponDiscount);
 
-  const handleSubmit = async () => {
-    const schema = deliveryType === 'delivery' ? deliverySchema : pickupSchema;
-    const result = schema.safeParse(form);
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.issues.forEach((issue) => {
-        fieldErrors[issue.path[0] as string] = issue.message;
-      });
-      setErrors(fieldErrors);
-      return;
-    }
-
-    setLoading(true);
+  const finalizeOrder = async () => {
     try {
       const orderItems = items.map((item) => ({
         product_id: item.productId,
@@ -181,7 +188,6 @@ export default function Checkout() {
         });
         cashbackCode = codeResult as string;
 
-        // Notify about cashback via WhatsApp
         try {
           await supabase.functions.invoke('send-whatsapp', {
             body: {
@@ -213,11 +219,169 @@ export default function Checkout() {
       navigate('/pedido-confirmado');
     } catch (err) {
       console.error(err);
+      toast.error('Erro ao registrar pedido. Tente novamente.');
+    }
+  };
+
+  const handleSubmit = async () => {
+    const schema = deliveryType === 'delivery' ? deliverySchema : pickupSchema;
+    const result = schema.safeParse(form);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.issues.forEach((issue) => {
+        fieldErrors[issue.path[0] as string] = issue.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (form.paymentMethod === 'pix') {
+        // Create PIX charge
+        const { data, error } = await supabase.functions.invoke('create-pix', {
+          body: {
+            amount: orderTotal,
+            description: `Pedido - ${settings?.store_name || 'Delícias Caseiras'}`,
+          },
+        });
+
+        if (error || !data?.qr_code) {
+          toast.error('Erro ao gerar cobrança PIX. Tente novamente.');
+          setLoading(false);
+          return;
+        }
+
+        setPixData({
+          payment_id: data.payment_id,
+          qr_code: data.qr_code,
+          qr_code_base64: data.qr_code_base64,
+        });
+
+        // Start polling for payment status
+        setCheckingPix(true);
+        pollingRef.current = setInterval(async () => {
+          try {
+            const { data: statusData } = await supabase.functions.invoke('check-pix-status', {
+              body: { payment_id: data.payment_id },
+            });
+
+            if (statusData?.status === 'approved') {
+              if (pollingRef.current) clearInterval(pollingRef.current);
+              setCheckingPix(false);
+              toast.success('Pagamento confirmado! ✅');
+              await finalizeOrder();
+            }
+          } catch (e) {
+            console.error('Polling error:', e);
+          }
+        }, 5000); // Check every 5 seconds
+
+        setLoading(false);
+      } else {
+        // Non-PIX: create order directly
+        await finalizeOrder();
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
       toast.error('Erro ao realizar pedido. Tente novamente.');
-    } finally {
       setLoading(false);
     }
   };
+
+  const copyPixCode = async () => {
+    if (!pixData?.qr_code) return;
+    try {
+      await navigator.clipboard.writeText(pixData.qr_code);
+      setPixCopied(true);
+      toast.success('Código PIX copiado!');
+      setTimeout(() => setPixCopied(false), 3000);
+    } catch {
+      toast.error('Erro ao copiar');
+    }
+  };
+
+  const cancelPix = () => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    setPixData(null);
+    setCheckingPix(false);
+  };
+
+  // PIX payment screen
+  if (pixData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
+          <div className="mx-auto max-w-lg px-4 py-3 flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80" onClick={cancelPix}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-lg">Pagamento PIX</h1>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-lg px-4 py-6 space-y-6">
+          <div className="text-center space-y-2">
+            <p className="text-2xl font-bold text-primary">{formatPrice(orderTotal)}</p>
+            <p className="text-sm text-muted-foreground">Escaneie o QR Code ou copie o código</p>
+          </div>
+
+          {/* QR Code */}
+          {pixData.qr_code_base64 && (
+            <div className="flex justify-center">
+              <div className="bg-white p-4 rounded-xl shadow-md">
+                <img
+                  src={`data:image/png;base64,${pixData.qr_code_base64}`}
+                  alt="QR Code PIX"
+                  className="w-56 h-56"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Copia e Cola */}
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-center">Ou copie o código PIX:</p>
+            <div className="relative">
+              <Input
+                value={pixData.qr_code}
+                readOnly
+                className="pr-12 text-xs font-mono"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2"
+                onClick={copyPixCode}
+              >
+                {pixCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="rounded-xl border bg-card p-4 text-center space-y-2">
+            {checkingPix ? (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+                <p className="text-sm font-medium">Aguardando pagamento...</p>
+                <p className="text-xs text-muted-foreground">
+                  O pedido será confirmado automaticamente após o pagamento
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-green-600 font-medium">✅ Pagamento confirmado!</p>
+            )}
+          </div>
+
+          <Button variant="outline" className="w-full" onClick={cancelPix}>
+            Cancelar e voltar
+          </Button>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -415,7 +579,11 @@ export default function Checkout() {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t p-4">
         <div className="mx-auto max-w-lg">
           <Button className="w-full py-5 text-base" onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Enviando...' : `Confirmar Pedido - ${formatPrice(orderTotal)}`}
+            {loading ? (
+              <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Processando...</span>
+            ) : (
+              `Confirmar Pedido - ${formatPrice(orderTotal)}`
+            )}
           </Button>
         </div>
       </div>
