@@ -11,7 +11,6 @@ export interface CartItem {
   price: number;
   quantity: number;
   notes?: string;
-  removedIngredients?: string[];
   extraIngredients?: ExtraIngredientItem[];
 }
 
@@ -35,7 +34,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     set((state) => {
       const existing = state.items.find(
         (i) => i.productId === item.productId && i.notes === item.notes &&
-          JSON.stringify(i.removedIngredients) === JSON.stringify(item.removedIngredients)
+          JSON.stringify(i.extraIngredients) === JSON.stringify(item.extraIngredients)
       );
       if (existing) {
         return {

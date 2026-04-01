@@ -18,7 +18,6 @@ interface ProductCardProps {
 
 export function ProductCard({ product, categories }: ProductCardProps) {
   const [open, setOpen] = useState(false);
-  const [removedIngredients, setRemovedIngredients] = useState<string[]>([]);
   const [addedExtras, setAddedExtras] = useState<ExtraIngredientItem[]>([]);
   const [notes, setNotes] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -28,6 +27,8 @@ export function ProductCard({ product, categories }: ProductCardProps) {
 
   const promoPrice = (product as any).promo_price as number | null;
   const hasPromo = promoPrice != null && promoPrice > 0;
+  const cashbackActive = (product as any).cashback_active as boolean;
+  const cashbackPercent = (product as any).cashback_percent as number;
   const displayPrice = hasPromo ? promoPrice : product.price;
 
   const isPizza = useMemo(
@@ -40,7 +41,6 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     [categories, product.category_id]
   );
 
-  // For combos: detect pizza size from name, or check if name mentions "pizza"
   const comboDetectedSize = useMemo(() => {
     if (!isCombo) return null;
     return detectPizzaSizeFromName(product.name);
@@ -51,10 +51,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     return product.name.toLowerCase().includes('pizza');
   }, [isCombo, product.name]);
 
-  // Combo has pizza if size detected OR name mentions pizza
   const comboHasPizza = isCombo && (comboDetectedSize !== null || comboMentionsPizza);
-
-  // For combos without detected size, show size selector
   const comboNeedsSizeSelection = comboHasPizza && comboDetectedSize === null;
 
   const effectiveSize = isPizza
@@ -88,7 +85,6 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     enabled: (isPizza || comboHasPizza) && open,
   });
 
-  // Fetch extra ingredients
   const { data: extraIngredients } = useQuery({
     queryKey: ['extra-ingredients'],
     queryFn: async () => {
@@ -105,23 +101,14 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const showSizeSelector = isPizza || comboNeedsSizeSelection;
   const showFlavorSelector = ((isPizza || comboHasPizza) && effectiveSize && flavorProducts && flavorProducts.length > 1);
 
-  const comboFlavorIngredients = useMemo(() => {
-    if (!comboHasPizza || !flavorProducts || selectedFlavors.length === 0) return [];
-    const allIngredients = new Set<string>();
-    for (const flavor of selectedFlavors) {
-      const fp = flavorProducts.find((p) => p.name === flavor);
-      if (fp?.ingredients) {
-        for (const ing of fp.ingredients as string[]) {
-          allIngredients.add(ing);
-        }
-      }
+  // Pre-select current product flavor when opening
+  const handleOpen = () => {
+    setOpen(true);
+    // For pizzas, pre-select the current product as a flavor
+    if (isPizza) {
+      setSelectedFlavors([product.name]);
     }
-    return Array.from(allIngredients).sort();
-  }, [comboHasPizza, flavorProducts, selectedFlavors]);
-
-  const availableIngredients = comboHasPizza && selectedFlavors.length > 0
-    ? comboFlavorIngredients
-    : (product.ingredients || []);
+  };
 
   const extrasTotal = addedExtras.reduce((s, e) => s + e.price, 0);
   const itemTotal = (displayPrice + extrasTotal) * quantity;
@@ -139,7 +126,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     const displayName = [
       product.name,
       (isPizza || comboNeedsSizeSelection) && sizeLabel ? `(${sizeLabel})` : '',
-      flavorNames ? `- ${flavorNames}` : '',
+      flavorNames && selectedFlavors.length > 1 ? `- ${flavorNames}` : '',
     ].filter(Boolean).join(' ');
 
     addItem({
@@ -148,7 +135,6 @@ export function ProductCard({ product, categories }: ProductCardProps) {
       price: displayPrice,
       quantity,
       notes: notes.trim() || undefined,
-      removedIngredients: removedIngredients.length > 0 ? removedIngredients : undefined,
       extraIngredients: addedExtras.length > 0 ? addedExtras : undefined,
     });
     toast.success(`${product.name} adicionado ao carrinho!`);
@@ -157,18 +143,11 @@ export function ProductCard({ product, categories }: ProductCardProps) {
 
   const resetAndClose = () => {
     setOpen(false);
-    setRemovedIngredients([]);
     setAddedExtras([]);
     setNotes('');
     setQuantity(1);
     setSelectedSize(null);
     setSelectedFlavors([]);
-  };
-
-  const toggleIngredient = (ing: string) => {
-    setRemovedIngredients((prev) =>
-      prev.includes(ing) ? prev.filter((i) => i !== ing) : [...prev, ing]
-    );
   };
 
   const toggleExtra = (extra: { name: string; price: number }) => {
@@ -180,6 +159,9 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   };
 
   const toggleFlavor = (name: string) => {
+    // Don't allow deselecting the original product flavor
+    if (isPizza && name === product.name) return;
+    
     setSelectedFlavors((prev) => {
       if (prev.includes(name)) return prev.filter((f) => f !== name);
       if (prev.length >= maxFlavors) {
@@ -198,9 +180,15 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
-        className="flex gap-3 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md"
+        onClick={handleOpen}
+        className="flex gap-3 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md relative"
       >
+        {/* Cashback badge */}
+        {cashbackActive && (
+          <div className="absolute top-0 left-0 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-xl rounded-br-xl z-10">
+            💰 Cashback {cashbackPercent}%
+          </div>
+        )}
         {product.image_url ? (
           <img src={product.image_url} alt={product.name} className="h-20 w-20 rounded-lg object-cover shrink-0" />
         ) : (
@@ -224,7 +212,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
         </div>
       </button>
 
-      <Dialog open={open} onOpenChange={(v) => { if (!v) resetAndClose(); else setOpen(true); }}>
+      <Dialog open={open} onOpenChange={(v) => { if (!v) resetAndClose(); else handleOpen(); }}>
         <DialogContent className="max-w-sm mx-auto max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{product.name}</DialogTitle>
@@ -244,6 +232,13 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <p className="font-bold text-primary text-xl">{formatPrice(product.price)}</p>
           )}
 
+          {cashbackActive && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+              <p className="text-sm font-semibold text-green-700">💰 Cashback ativo: {cashbackPercent}%</p>
+              <p className="text-xs text-green-600">Ganhe {formatPrice(displayPrice * cashbackPercent / 100)} de volta!</p>
+            </div>
+          )}
+
           {/* Pizza/Combo Size Selection */}
           {showSizeSelector && (
             <div>
@@ -254,8 +249,12 @@ export function ProductCard({ product, categories }: ProductCardProps) {
                     key={size.key}
                     onClick={() => {
                       setSelectedSize(size.key);
-                      setSelectedFlavors([]);
-                      setRemovedIngredients([]);
+                      // Keep the original flavor selected, reset others
+                      if (isPizza) {
+                        setSelectedFlavors([product.name]);
+                      } else {
+                        setSelectedFlavors([]);
+                      }
                     }}
                     className={cn(
                       'rounded-lg border p-2 text-sm font-medium transition-colors text-center',
@@ -290,13 +289,16 @@ export function ProductCard({ product, categories }: ProductCardProps) {
               <div className="space-y-1 max-h-40 overflow-y-auto">
                 {flavorProducts!.map((sp) => {
                   const isSelected = selectedFlavors.includes(sp.name);
+                  const isOriginal = isPizza && sp.name === product.name;
                   return (
                     <button
                       key={sp.id}
                       onClick={() => toggleFlavor(sp.name)}
+                      disabled={isOriginal}
                       className={cn(
                         'w-full flex items-center gap-2 rounded-lg border p-2 text-sm transition-colors text-left',
-                        isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
+                        isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted',
+                        isOriginal ? 'opacity-80 cursor-default' : ''
                       )}
                     >
                       <div className={cn(
@@ -306,33 +308,14 @@ export function ProductCard({ product, categories }: ProductCardProps) {
                         {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                       </div>
                       {sp.name}
+                      {isOriginal && <span className="text-xs text-muted-foreground ml-auto">(selecionado)</span>}
                     </button>
                   );
                 })}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {selectedFlavors.length}/{maxFlavors} selecionados (opcional)
+                {selectedFlavors.length}/{maxFlavors} selecionados
               </p>
-            </div>
-          )}
-
-          {/* Ingredient removal */}
-          {availableIngredients.length > 0 && (
-            <div>
-              <p className="text-sm font-medium mb-2">Remover ingredientes:</p>
-              <div className="grid grid-cols-2 gap-2">
-                {availableIngredients.map((ing) => (
-                  <label key={ing} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <Checkbox
-                      checked={removedIngredients.includes(ing)}
-                      onCheckedChange={() => toggleIngredient(ing)}
-                    />
-                    <span className={removedIngredients.includes(ing) ? 'line-through text-muted-foreground' : ''}>
-                      {ing}
-                    </span>
-                  </label>
-                ))}
-              </div>
             </div>
           )}
 
@@ -361,7 +344,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
           )}
 
           <Textarea
-            placeholder="Observações (ex: borda recheada, bem passado...)"
+            placeholder="Observações (ex: sem cebola, borda recheada, bem passado...)"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             maxLength={200}

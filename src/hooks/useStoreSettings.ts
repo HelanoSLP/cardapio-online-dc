@@ -7,9 +7,6 @@ export interface StoreSettings {
   logo_url: string;
   wallpaper_url: string;
   delivery_fee: number;
-  cashback_enabled: boolean;
-  cashback_threshold: number;
-  cashback_value: number;
   store_open: boolean;
 }
 
@@ -19,9 +16,6 @@ const DEFAULTS: StoreSettings = {
   logo_url: '',
   wallpaper_url: '',
   delivery_fee: 7,
-  cashback_enabled: false,
-  cashback_threshold: 100,
-  cashback_value: 10,
   store_open: true,
 };
 
@@ -41,9 +35,6 @@ export function useStoreSettings() {
         logo_url: map.logo_url || '',
         wallpaper_url: map.wallpaper_url || map.banner_url || '',
         delivery_fee: parseFloat(map.delivery_fee) || DEFAULTS.delivery_fee,
-        cashback_enabled: map.cashback_enabled === 'true',
-        cashback_threshold: parseFloat(map.cashback_threshold) || DEFAULTS.cashback_threshold,
-        cashback_value: parseFloat(map.cashback_value) || DEFAULTS.cashback_value,
         store_open: map.store_open !== 'false',
       };
     },

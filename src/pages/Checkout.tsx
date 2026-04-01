@@ -149,7 +149,6 @@ export default function Checkout() {
         quantity: item.quantity,
         unit_price: item.price + (item.extraIngredients?.reduce((s, e) => s + e.price, 0) || 0),
         notes: [
-          item.removedIngredients?.length ? `Sem: ${item.removedIngredients.join(', ')}` : '',
           item.extraIngredients?.length ? `Add: ${item.extraIngredients.map(e => e.name).join(', ')}` : '',
           item.notes || '',
         ].filter(Boolean).join(' | ') || null,
@@ -185,27 +184,7 @@ export default function Checkout() {
         await supabase.rpc('use_coupon', { p_coupon_id: couponId });
       }
 
-      // Generate cashback coupon if eligible
-      let cashbackCode: string | null = null;
-      if (settings?.cashback_enabled && subtotal >= settings.cashback_threshold) {
-        const { data: codeResult } = await supabase.rpc('generate_cashback_coupon', {
-          p_whatsapp: form.whatsapp.trim(),
-          p_discount: settings.cashback_value,
-        });
-        cashbackCode = codeResult as string;
-
-        if (orderId) {
-          try {
-            await supabase.functions.invoke('notify-order', {
-              body: {
-                order_id: orderId,
-                phone: form.whatsapp.trim(),
-                message: `🎁 Parabéns! Você ganhou um cupom de cashback de ${formatPrice(settings.cashback_value)}!\n\n🎫 Código: ${cashbackCode}\n📅 Válido por 30 dias\n\nUse na sua próxima compra! 😊`,
-              },
-            });
-          } catch (e) { console.error('Cashback WhatsApp error:', e); }
-        }
-      }
+      // Cashback is now per-product, handled separately
 
       // Send confirmation WhatsApp
       if (orderId) {

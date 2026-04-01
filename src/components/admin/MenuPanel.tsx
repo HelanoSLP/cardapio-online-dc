@@ -9,12 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree } from 'lucide-react';
+import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExtraIngredientsPanel } from './ExtraIngredientsPanel';
 
 type Category = Tables<'categories'> & { parent_id?: string | null };
-type Product = Tables<'products'>;
+type Product = Tables<'products'> & { cashback_active?: boolean; cashback_percent?: number };
 
 export function MenuPanel() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -30,6 +30,7 @@ export function MenuPanel() {
   const [form, setForm] = useState({
     name: '', description: '', price: '', category_id: '', ingredients: '', active: true, image_url: null as string | null,
     hasPromo: false, promo_price: '',
+    hasCashback: false, cashback_percent: '',
   });
 
   // Category dialog state
@@ -45,7 +46,7 @@ export function MenuPanel() {
       supabase.from('products').select('*').order('sort_order'),
     ]);
     if (cats) setCategories(cats as Category[]);
-    if (prods) setProducts(prods);
+    if (prods) setProducts(prods as Product[]);
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -73,13 +74,14 @@ export function MenuPanel() {
   };
 
   const handleSaveCat = async () => {
-    if (!catForm.name || !catForm.slug) {
-      toast.error('Nome e slug são obrigatórios');
+    if (!catForm.name) {
+      toast.error('Nome é obrigatório');
       return;
     }
+    const slug = catForm.slug.trim() || catForm.name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const data: any = {
       name: catForm.name.trim(),
-      slug: catForm.slug.trim().toLowerCase().replace(/\s+/g, '-'),
+      slug,
       icon: catForm.icon.trim() || null,
       sort_order: parseInt(catForm.sort_order) || 0,
       active: catForm.active,
@@ -111,10 +113,25 @@ export function MenuPanel() {
     fetchData();
   };
 
+  const moveSubcategory = async (sub: Category, direction: 'up' | 'down') => {
+    if (!sub.parent_id) return;
+    const siblings = getChildCategories(sub.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+    const idx = siblings.findIndex((s) => s.id === sub.id);
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= siblings.length) return;
+
+    const other = siblings[targetIdx];
+    await Promise.all([
+      supabase.from('categories').update({ sort_order: other.sort_order }).eq('id', sub.id),
+      supabase.from('categories').update({ sort_order: sub.sort_order }).eq('id', other.id),
+    ]);
+    fetchData();
+  };
+
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '' });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '' });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
@@ -126,6 +143,8 @@ export function MenuPanel() {
       name: p.name, description: p.description || '', price: String(p.price),
       category_id: p.category_id, ingredients: p.ingredients?.join(', ') || '', active: p.active, image_url: p.image_url,
       hasPromo: promoPrice != null && promoPrice > 0, promo_price: promoPrice ? String(promoPrice) : '',
+      hasCashback: (p as any).cashback_active ?? false,
+      cashback_percent: (p as any).cashback_percent ? String((p as any).cashback_percent) : '',
     });
     setImageFile(null); setImagePreview(p.image_url || null);
     setProductDialog(true);
@@ -166,6 +185,8 @@ export function MenuPanel() {
         ingredients: form.ingredients ? form.ingredients.split(',').map((s) => s.trim()).filter(Boolean) : null,
         active: form.active,
         promo_price: form.hasPromo && form.promo_price ? parseFloat(form.promo_price) : null,
+        cashback_active: form.hasCashback,
+        cashback_percent: form.hasCashback && form.cashback_percent ? parseFloat(form.cashback_percent) : 0,
       };
       if (editingProduct) {
         data.image_url = await uploadImage(editingProduct.id);
@@ -199,8 +220,10 @@ export function MenuPanel() {
 
   const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name || '';
 
-  // Only show leaf categories (those with no children) for product assignment
   const leafCategories = categories.filter((c) => !categories.some((child) => child.parent_id === c.id));
+
+  const isEditingParentCategory = editingCat ? !editingCat.parent_id && categories.some(c => c.parent_id === editingCat.id) : false;
+  const isEditingSubcategory = editingCat ? !!editingCat.parent_id : false;
 
   return (
     <div className="space-y-4 mt-4">
@@ -228,7 +251,14 @@ export function MenuPanel() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{p.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm truncate">{p.name}</p>
+                    {(p as any).cashback_active && (
+                      <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
+                        💰 {(p as any).cashback_percent}%
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">{getCategoryName(p.category_id)} • {formatPrice(p.price)}</p>
                 </div>
                 <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
@@ -265,14 +295,13 @@ export function MenuPanel() {
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
-                {/* Subcategories */}
-                {getChildCategories(cat.id).map((sub) => (
+                {getChildCategories(cat.id).sort((a, b) => a.sort_order - b.sort_order).map((sub, idx, arr) => (
                   <div key={sub.id} className={`flex items-center gap-3 rounded-lg border p-3 ml-6 mt-1 ${!sub.active ? 'opacity-50' : ''}`}>
                     <FolderTree className="h-4 w-4 text-muted-foreground shrink-0" />
                     <span className="text-lg">{sub.icon || '📄'}</span>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{sub.name}</p>
-                      <p className="text-xs text-muted-foreground">slug: {sub.slug} • ordem: {sub.sort_order}</p>
+                      <p className="text-xs text-muted-foreground">slug: {sub.slug}</p>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditCat(sub)}>
                       <Pencil className="h-3 w-3" />
@@ -282,19 +311,6 @@ export function MenuPanel() {
                     </Button>
                   </div>
                 ))}
-              </div>
-            ))}
-            {/* Orphan subcategories (shouldn't happen but just in case) */}
-            {categories.filter((c) => c.parent_id && !categories.find((p) => p.id === c.parent_id)).map((cat) => (
-              <div key={cat.id} className={`flex items-center gap-3 rounded-lg border p-3 border-destructive/30 ${!cat.active ? 'opacity-50' : ''}`}>
-                <span className="text-xl">{cat.icon || '⚠️'}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{cat.name}</p>
-                  <p className="text-xs text-destructive">Categoria pai não encontrada</p>
-                </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditCat(cat)}>
-                  <Pencil className="h-3 w-3" />
-                </Button>
               </div>
             ))}
           </div>
@@ -360,6 +376,8 @@ export function MenuPanel() {
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
               <Label>Ativo no cardápio</Label>
             </div>
+
+            {/* Promoção */}
             <div className="space-y-3 rounded-lg border p-3">
               <div className="flex items-center gap-2">
                 <Switch checked={form.hasPromo} onCheckedChange={(v) => setForm({ ...form, hasPromo: v, promo_price: v ? form.promo_price : '' })} />
@@ -371,6 +389,26 @@ export function MenuPanel() {
                   <div>
                     <Label>Valor promocional *</Label>
                     <Input type="number" step="0.01" value={form.promo_price} onChange={(e) => setForm({ ...form, promo_price: e.target.value })} placeholder="Ex: 29.90" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Cashback */}
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex items-center gap-2">
+                <Switch checked={form.hasCashback} onCheckedChange={(v) => setForm({ ...form, hasCashback: v, cashback_percent: v ? form.cashback_percent : '' })} />
+                <Label className="font-semibold">💰 Cashback</Label>
+              </div>
+              {form.hasCashback && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Valor do produto: {form.price ? formatPrice(parseFloat(form.price)) : 'R$ 0,00'}
+                    {form.cashback_percent && form.price ? ` → Cashback: ${formatPrice(parseFloat(form.price) * parseFloat(form.cashback_percent) / 100)}` : ''}
+                  </p>
+                  <div>
+                    <Label>Porcentagem de cashback (%)</Label>
+                    <Input type="number" step="1" min="1" max="100" value={form.cashback_percent} onChange={(e) => setForm({ ...form, cashback_percent: e.target.value })} placeholder="Ex: 10" />
                   </div>
                 </div>
               )}
@@ -395,37 +433,112 @@ export function MenuPanel() {
               <Label>Nome *</Label>
               <Input value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} maxLength={100} placeholder="Ex: Pizzas Salgadas" />
             </div>
-            <div>
-              <Label>Slug *</Label>
-              <Input value={catForm.slug} onChange={(e) => setCatForm({ ...catForm, slug: e.target.value })} maxLength={50} placeholder="Ex: pizzas-salgadas" />
-              <p className="text-xs text-muted-foreground mt-1">Identificador único (sem espaços)</p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Emoji/Ícone</Label>
-                <Input value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} placeholder="🍕" />
-              </div>
-              <div>
-                <Label>Ordem</Label>
-                <Input type="number" value={catForm.sort_order} onChange={(e) => setCatForm({ ...catForm, sort_order: e.target.value })} />
-              </div>
-            </div>
-            <div>
-              <Label>Categoria Pai (opcional)</Label>
-              <Select value={catForm.parent_id} onValueChange={(v) => setCatForm({ ...catForm, parent_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Nenhuma (categoria principal)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhuma (categoria principal)</SelectItem>
-                  {parentCategories
-                    .filter((c) => c.id !== editingCat?.id)
-                    .map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={catForm.active} onCheckedChange={(v) => setCatForm({ ...catForm, active: v })} />
-              <Label>Ativa</Label>
-            </div>
+
+            {/* Show full form for new categories or parent categories being edited */}
+            {!editingCat && (
+              <>
+                <div>
+                  <Label>Slug</Label>
+                  <Input value={catForm.slug} onChange={(e) => setCatForm({ ...catForm, slug: e.target.value })} maxLength={50} placeholder="Gerado automaticamente se vazio" />
+                  <p className="text-xs text-muted-foreground mt-1">Identificador único (sem espaços)</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Emoji/Ícone</Label>
+                    <Input value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} placeholder="🍕" />
+                  </div>
+                  <div>
+                    <Label>Ordem</Label>
+                    <Input type="number" value={catForm.sort_order} onChange={(e) => setCatForm({ ...catForm, sort_order: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Categoria Pai (opcional)</Label>
+                  <Select value={catForm.parent_id} onValueChange={(v) => setCatForm({ ...catForm, parent_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Nenhuma (categoria principal)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma (categoria principal)</SelectItem>
+                      {parentCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={catForm.active} onCheckedChange={(v) => setCatForm({ ...catForm, active: v })} />
+                  <Label>Ativa</Label>
+                </div>
+              </>
+            )}
+
+            {/* Editing parent category with children: rename + reorder subcategories */}
+            {editingCat && isEditingParentCategory && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Emoji/Ícone</Label>
+                    <Input value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} placeholder="🍕" />
+                  </div>
+                  <div>
+                    <Label>Ordem</Label>
+                    <Input type="number" value={catForm.sort_order} onChange={(e) => setCatForm({ ...catForm, sort_order: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="font-semibold">Ordenar subcategorias</Label>
+                  <div className="space-y-1 mt-2">
+                    {getChildCategories(editingCat.id).sort((a, b) => a.sort_order - b.sort_order).map((sub, idx, arr) => (
+                      <div key={sub.id} className="flex items-center gap-2 rounded-lg border p-2">
+                        <span className="text-sm flex-1">{sub.icon || '📄'} {sub.name}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={idx === 0} onClick={() => moveSubcategory(sub, 'up')}>
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" disabled={idx === arr.length - 1} onClick={() => moveSubcategory(sub, 'down')}>
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Editing subcategory: only rename */}
+            {editingCat && isEditingSubcategory && (
+              <p className="text-xs text-muted-foreground">Apenas o nome pode ser alterado para subcategorias.</p>
+            )}
+
+            {/* Editing standalone parent (no children): full form */}
+            {editingCat && !isEditingParentCategory && !isEditingSubcategory && (
+              <>
+                <div>
+                  <Label>Slug</Label>
+                  <Input value={catForm.slug} onChange={(e) => setCatForm({ ...catForm, slug: e.target.value })} maxLength={50} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Emoji/Ícone</Label>
+                    <Input value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} placeholder="🍕" />
+                  </div>
+                  <div>
+                    <Label>Ordem</Label>
+                    <Input type="number" value={catForm.sort_order} onChange={(e) => setCatForm({ ...catForm, sort_order: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Categoria Pai (opcional)</Label>
+                  <Select value={catForm.parent_id} onValueChange={(v) => setCatForm({ ...catForm, parent_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Nenhuma (categoria principal)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nenhuma (categoria principal)</SelectItem>
+                      {parentCategories.filter(c => c.id !== editingCat?.id).map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={catForm.active} onCheckedChange={(v) => setCatForm({ ...catForm, active: v })} />
+                  <Label>Ativa</Label>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button onClick={handleSaveCat} className="w-full">Salvar</Button>

@@ -26,9 +26,6 @@ export function CartDrawer() {
               <div key={`${item.productId}-${idx}`} className="flex items-center gap-3 rounded-lg border p-3">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{item.name}</p>
-                  {item.removedIngredients && item.removedIngredients.length > 0 && (
-                    <p className="text-xs text-destructive">Sem: {item.removedIngredients.join(', ')}</p>
-                  )}
                   {item.extraIngredients && item.extraIngredients.length > 0 && (
                     <p className="text-xs text-green-600">+{item.extraIngredients.map(e => e.name).join(', ')}</p>
                   )}

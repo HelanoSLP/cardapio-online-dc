@@ -23,17 +23,20 @@ const Index = () => {
 
   const { data: products, isLoading: loadingProducts } = useProducts(activeSlugs);
 
-  // Fetch active banner promotions
-  const { data: bannerPromos } = useQuery({
-    queryKey: ["active-banners"],
+  // Fetch products with active cashback or promo for the "Promoções" tab
+  const { data: promoProducts } = useQuery({
+    queryKey: ["promo-cashback-products"],
     queryFn: async () => {
+      // Get products with promo_price set OR cashback_active
       const { data } = await supabase
-        .from("promotions")
-        .select("*")
-        .eq("type", "banner")
+        .from("products")
+        .select("*, categories!inner(slug, name, sort_order)")
         .eq("active", true)
-        .order("created_at", { ascending: false });
-      return data || [];
+        .order("sort_order");
+      // Filter client-side for promo or cashback
+      return (data || []).filter((p: any) => 
+        (p.promo_price != null && p.promo_price > 0) || p.cashback_active
+      );
     },
   });
 
@@ -55,26 +58,11 @@ const Index = () => {
 
   const [mobileTab, setMobileTab] = useState<"menu" | "promos">("menu");
 
-  const promoBannersContent =
-    bannerPromos && bannerPromos.length > 0 ? (
-      <div className="space-y-3">
-        {bannerPromos.map((promo: any) => (
-          <div key={promo.id} className="rounded-xl overflow-hidden border">
-            {promo.banner_image_url ? (
-              <div className="relative">
-                <img src={promo.banner_image_url} alt={promo.title} className="w-full h-32 object-cover" />
-                {promo.banner_text && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end p-3">
-                    <p className="text-sm font-bold text-white">{promo.banner_text}</p>
-                  </div>
-                )}
-              </div>
-            ) : promo.banner_text ? (
-              <div className="bg-gradient-to-r from-primary to-secondary p-4 text-center">
-                <p className="text-sm font-bold text-primary-foreground">{promo.banner_text}</p>
-              </div>
-            ) : null}
-          </div>
+  const promoContent =
+    promoProducts && promoProducts.length > 0 ? (
+      <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+        {promoProducts.map((product: any) => (
+          <ProductCard key={product.id} product={product} categories={categories} />
         ))}
       </div>
     ) : (
@@ -182,14 +170,14 @@ const Index = () => {
         <main className="flex-1 min-w-0">{productsContent}</main>
         <aside className="w-72 shrink-0">
           <h2 className="text-lg font-bold text-foreground mb-3">🔥 Promoções</h2>
-          {promoBannersContent}
+          {promoContent}
         </aside>
       </div>
 
       {/* Mobile Portrait: content */}
       <div className="landscape:hidden lg:hidden">
         <main className="mx-auto max-w-lg px-4 py-4">
-          {mobileTab === "menu" ? productsContent : promoBannersContent}
+          {mobileTab === "menu" ? productsContent : promoContent}
         </main>
       </div>
 
