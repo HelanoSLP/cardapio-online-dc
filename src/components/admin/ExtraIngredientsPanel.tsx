@@ -20,7 +20,7 @@ export function ExtraIngredientsPanel() {
   const [items, setItems] = useState<ExtraIngredient[]>([]);
   const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<ExtraIngredient | null>(null);
-  const [form, setForm] = useState({ name: '', price: '', active: true, sort_order: '0' });
+  const [form, setForm] = useState({ name: '', price: '', active: true });
 
   const fetchData = async () => {
     const { data } = await supabase.from('extra_ingredients').select('*').order('sort_order');
@@ -34,29 +34,29 @@ export function ExtraIngredientsPanel() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: '', price: '', active: true, sort_order: '0' });
+    setForm({ name: '', price: '', active: true });
     setDialog(true);
   };
 
   const openEdit = (item: ExtraIngredient) => {
     setEditing(item);
-    setForm({ name: item.name, price: String(item.price), active: item.active, sort_order: String(item.sort_order) });
+    setForm({ name: item.name, price: String(item.price), active: item.active });
     setDialog(true);
   };
 
   const handleSave = async () => {
     if (!form.name || !form.price) { toast.error('Nome e preço são obrigatórios'); return; }
-    const data = {
+    const data: any = {
       name: form.name.trim(),
       price: parseFloat(form.price),
       active: form.active,
-      sort_order: parseInt(form.sort_order) || 0,
     };
     if (editing) {
       const { error } = await supabase.from('extra_ingredients').update(data).eq('id', editing.id);
       if (error) { toast.error('Erro ao atualizar'); return; }
       toast.success('Ingrediente atualizado');
     } else {
+      data.sort_order = items.length;
       const { error } = await supabase.from('extra_ingredients').insert(data);
       if (error) { toast.error('Erro ao criar'); return; }
       toast.success('Ingrediente criado');
@@ -113,15 +113,9 @@ export function ExtraIngredientsPanel() {
               <Label>Nome *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Bacon" maxLength={100} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Preço *</Label>
-                <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="5.00" />
-              </div>
-              <div>
-                <Label>Ordem</Label>
-                <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} />
-              </div>
+            <div>
+              <Label>Preço *</Label>
+              <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="5.00" />
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />

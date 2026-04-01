@@ -47,6 +47,10 @@ const sendWhatsApp = async (phone: string, message: string) => {
   }
 };
 
+const isPickupOrder = (order: Order) => {
+  return order.notes?.includes('RETIRADA NO LOCAL') || order.address_street === 'RETIRADA NO LOCAL';
+};
+
 export function OrdersPanel() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [orderItems, setOrderItems] = useState<Record<string, OrderItem[]>>({});
@@ -155,25 +159,31 @@ export function OrdersPanel() {
 
   const handlePrint = (order: Order) => {
     const items = orderItems[order.id] || [];
+    const pickup = isPickupOrder(order);
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
     printWindow.document.write(`
       <html><head><title>Pedido</title>
       <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: monospace; font-size: 12px; width: 280px; margin: 0 auto; padding: 10px; }
         h1 { font-size: 16px; text-align: center; margin: 5px 0; }
         hr { border: 1px dashed #000; }
         .item { display: flex; justify-content: space-between; margin: 3px 0; }
         .total { font-size: 14px; font-weight: bold; }
         .notes { font-style: italic; font-size: 11px; margin-left: 10px; }
+        @media print { html, body { height: auto !important; } }
       </style></head><body>
       <h1>😋 Delícias Caseiras</h1>
       <p style="text-align:center">${escHtml(formatDate(order.created_at))}</p>
       <hr/>
       <p><b>Cliente:</b> ${escHtml(order.customer_name)}</p>
-      <p><b>Endereço:</b> ${escHtml(order.address_street)}, ${escHtml(order.address_number)} - ${escHtml(order.address_neighborhood)}</p>
-      ${order.address_reference ? `<p><b>Ref:</b> ${escHtml(order.address_reference)}</p>` : ''}
+      ${pickup
+        ? '<p><b>🏪 RETIRADA NO LOCAL</b></p>'
+        : `<p><b>Endereço:</b> ${escHtml(order.address_street)}, ${escHtml(order.address_number)} - ${escHtml(order.address_neighborhood)}</p>
+           ${order.address_reference ? `<p><b>Ref:</b> ${escHtml(order.address_reference)}</p>` : ''}`
+      }
       <hr/>
       ${items.map((i) => `
         <div class="item"><span>${i.quantity}x ${escHtml(i.product_name)}</span><span>${formatPrice(i.unit_price * i.quantity)}</span></div>
@@ -223,59 +233,76 @@ export function OrdersPanel() {
         <p className="text-center text-muted-foreground py-8">Nenhum pedido encontrado</p>
       ) : (
         <div className="space-y-3">
-          {orders.map((order) => (
-            <div key={order.id} className="rounded-xl border bg-card p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-bold">{order.customer_name}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(order.created_at)}</p>
-                </div>
-                <Badge className={statusLabels[order.status]?.color}>
-                  {statusLabels[order.status]?.label}
-                </Badge>
-              </div>
-
-              <div className="text-sm space-y-1">
-                <p><b>WhatsApp:</b> {maskWhatsApp(order.customer_whatsapp)}</p>
-                <p><b>Endereço:</b> {order.address_street}, {order.address_number} - {order.address_neighborhood}</p>
-                {order.address_reference && <p><b>Ref:</b> {order.address_reference}</p>}
-              </div>
-
-              {orderItems[order.id] && (
-                <div className="text-sm border-t pt-2">
-                  {orderItems[order.id].map((item) => (
-                    <div key={item.id} className="flex justify-between py-0.5">
-                      <span>{item.quantity}x {item.product_name} {item.notes ? <span className="text-muted-foreground text-xs">({item.notes})</span> : null}</span>
-                      <span>{formatPrice(item.unit_price * item.quantity)}</span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between font-bold pt-1 border-t mt-1">
-                    <span>Total</span>
-                    <span>{formatPrice(order.total)}</span>
+          {orders.map((order) => {
+            const pickup = isPickupOrder(order);
+            return (
+              <div key={order.id} className="rounded-xl border bg-card p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-bold">{order.customer_name}</p>
+                    <p className="text-xs text-muted-foreground">{formatDate(order.created_at)}</p>
+                    {pickup && <span className="text-xs font-semibold text-orange-600">🏪 Retirada no local</span>}
                   </div>
-                  <p className="text-xs mt-1">{paymentLabels[order.payment_method]}
-                    {order.change_for ? ` • Troco p/ ${formatPrice(order.change_for)}` : ''}
-                  </p>
-                  {order.notes && <p className="text-xs text-muted-foreground mt-1">Obs: {order.notes}</p>}
+                  <Badge className={statusLabels[order.status]?.color}>
+                    {statusLabels[order.status]?.label}
+                  </Badge>
                 </div>
-              )}
 
-              <div className="flex gap-2 flex-wrap">
-                <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
-                  <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="received">🟡 Recebido</SelectItem>
-                    <SelectItem value="preparing">🟠 Em Preparo</SelectItem>
-                    <SelectItem value="out_for_delivery">🔵 Saiu p/ Entrega</SelectItem>
-                    <SelectItem value="delivered">🟢 Entregue</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" size="sm" onClick={() => handlePrint(order)}>
-                  <Printer className="h-3 w-3 mr-1" /> Imprimir
-                </Button>
+                <div className="text-sm space-y-1">
+                  <p><b>WhatsApp:</b> {maskWhatsApp(order.customer_whatsapp)}</p>
+                  {!pickup && (
+                    <>
+                      <p><b>Endereço:</b> {order.address_street}, {order.address_number} - {order.address_neighborhood}</p>
+                      {order.address_reference && <p><b>Ref:</b> {order.address_reference}</p>}
+                    </>
+                  )}
+                </div>
+
+                {orderItems[order.id] && (
+                  <div className="text-sm border-t pt-2">
+                    {orderItems[order.id].map((item) => (
+                      <div key={item.id} className="flex justify-between py-0.5">
+                        <span>{item.quantity}x {item.product_name} {item.notes ? <span className="text-muted-foreground text-xs">({item.notes})</span> : null}</span>
+                        <span>{formatPrice(item.unit_price * item.quantity)}</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between font-bold pt-1 border-t mt-1">
+                      <span>Total</span>
+                      <span>{formatPrice(order.total)}</span>
+                    </div>
+                    <p className="text-xs mt-1">{paymentLabels[order.payment_method]}
+                      {order.change_for ? ` • Troco p/ ${formatPrice(order.change_for)}` : ''}
+                    </p>
+                    {order.notes && <p className="text-xs text-muted-foreground mt-1">Obs: {order.notes}</p>}
+                  </div>
+                )}
+
+                <div className="flex gap-2 flex-wrap">
+                  <Select value={order.status} onValueChange={(v) => updateStatus(order.id, v)}>
+                    <SelectTrigger className="w-44 h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {pickup ? (
+                        <>
+                          <SelectItem value="preparing">🟠 Em Preparo</SelectItem>
+                          <SelectItem value="delivered">🟢 Entregue</SelectItem>
+                        </>
+                      ) : (
+                        <>
+                          <SelectItem value="received">🟡 Recebido</SelectItem>
+                          <SelectItem value="preparing">🟠 Em Preparo</SelectItem>
+                          <SelectItem value="out_for_delivery">🔵 Saiu p/ Entrega</SelectItem>
+                          <SelectItem value="delivered">🟢 Entregue</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm" onClick={() => handlePrint(order)}>
+                    <Printer className="h-3 w-3 mr-1" /> Imprimir
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

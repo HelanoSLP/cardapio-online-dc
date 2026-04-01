@@ -11,9 +11,6 @@ interface Settings {
   store_name: string;
   logo_url: string;
   delivery_fee: string;
-  cashback_enabled: string;
-  cashback_threshold: string;
-  cashback_value: string;
   store_open: string;
 }
 
@@ -22,9 +19,6 @@ export function SettingsPanel() {
     store_name: 'Delícias Caseiras',
     logo_url: '',
     delivery_fee: '7',
-    cashback_enabled: 'false',
-    cashback_threshold: '100',
-    cashback_value: '10',
     store_open: 'true',
   });
   const [saving, setSaving] = useState(false);
@@ -32,17 +26,14 @@ export function SettingsPanel() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  useEffect(() => { fetchSettings(); }, []);
 
   const fetchSettings = async () => {
     const { data } = await supabase.from('store_settings').select('key, value');
     if (data) {
       const s: any = { ...settings };
       data.forEach((row: any) => {
-        if (row.key === 'banner_url' || row.key === 'wallpaper_url') return;
-        s[row.key] = row.value;
+        if (row.key in s) s[row.key] = row.value;
       });
       setSettings(s);
       if (s.logo_url) setLogoPreview(s.logo_url);
@@ -78,9 +69,6 @@ export function SettingsPanel() {
         { key: 'store_name_type', value: 'logo' },
         { key: 'logo_url', value: logoUrl },
         { key: 'delivery_fee', value: settings.delivery_fee },
-        { key: 'cashback_enabled', value: settings.cashback_enabled },
-        { key: 'cashback_threshold', value: settings.cashback_threshold },
-        { key: 'cashback_value', value: settings.cashback_value },
         { key: 'store_open', value: settings.store_open },
       ];
 
@@ -129,12 +117,6 @@ export function SettingsPanel() {
       {/* Store Identity - Logo only */}
       <section className="rounded-xl border bg-card p-4 space-y-4">
         <h2 className="text-base font-bold">🏪 Identidade da Loja</h2>
-
-        <div>
-          <Label>Nome da empresa (usado internamente)</Label>
-          <Input value={settings.store_name} onChange={(e) => update('store_name', e.target.value)} maxLength={50} placeholder="Nome da sua empresa" />
-        </div>
-
         <div>
           <Label>Logo (máx. 10MB)</Label>
           <input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
@@ -161,31 +143,6 @@ export function SettingsPanel() {
           <Label>Valor da taxa (R$)</Label>
           <Input type="number" step="0.50" min="0" value={settings.delivery_fee} onChange={(e) => update('delivery_fee', e.target.value)} placeholder="7.00" />
         </div>
-      </section>
-
-      {/* Cashback */}
-      <section className="rounded-xl border bg-card p-4 space-y-4">
-        <h2 className="text-base font-bold">🎁 Sistema de Cashback</h2>
-        <div className="flex items-center gap-3">
-          <Switch checked={settings.cashback_enabled === 'true'} onCheckedChange={(v) => update('cashback_enabled', v ? 'true' : 'false')} />
-          <Label>Ativar cashback</Label>
-        </div>
-
-        {settings.cashback_enabled === 'true' && (
-          <>
-            <div>
-              <Label>Valor mínimo de compra para ganhar cashback (R$)</Label>
-              <Input type="number" step="1" min="1" value={settings.cashback_threshold} onChange={(e) => update('cashback_threshold', e.target.value)} placeholder="100" />
-            </div>
-            <div>
-              <Label>Valor do cupom gerado (R$)</Label>
-              <Input type="number" step="0.50" min="0.50" value={settings.cashback_value} onChange={(e) => update('cashback_value', e.target.value)} placeholder="10" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              A cada compra acima de R$ {settings.cashback_threshold}, o cliente recebe um cupom de R$ {settings.cashback_value} para a próxima compra.
-            </p>
-          </>
-        )}
       </section>
 
       <Button onClick={handleSave} disabled={saving} className="w-full py-5 text-base">
