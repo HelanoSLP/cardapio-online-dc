@@ -231,6 +231,8 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          cashback_active: boolean
+          cashback_percent: number
           category_id: string
           created_at: string
           description: string | null
@@ -245,6 +247,8 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          cashback_active?: boolean
+          cashback_percent?: number
           category_id: string
           created_at?: string
           description?: string | null
@@ -259,6 +263,8 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          cashback_active?: boolean
+          cashback_percent?: number
           category_id?: string
           created_at?: string
           description?: string | null
