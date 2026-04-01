@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, X, LayoutDashboard, ClipboardList, UtensilsCrossed, Megaphone, Settings } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, ClipboardList, UtensilsCrossed, Settings } from 'lucide-react';
 import { OrdersPanel } from '@/components/admin/OrdersPanel';
 import { MenuPanel } from '@/components/admin/MenuPanel';
 import { SettingsPanel } from '@/components/admin/SettingsPanel';
-import { PromotionsPanel } from '@/components/admin/PromotionsPanel';
 import { DashboardPanel } from '@/components/admin/DashboardPanel';
 import { toast } from 'sonner';
 
@@ -14,7 +13,6 @@ const tabs = [
   { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'orders', label: 'Pedidos', icon: ClipboardList },
   { key: 'menu', label: 'Cardápio', icon: UtensilsCrossed },
-  { key: 'promos', label: 'Promoções', icon: Megaphone },
   { key: 'settings', label: 'Configurações', icon: Settings },
 ];
 
@@ -54,7 +52,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar */}
       <header className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'hsl(220 15% 20%)', color: 'white' }}>
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -72,7 +69,6 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      {/* Slide-down menu */}
       {menuOpen && (
         <div className="sticky top-[53px] z-30 border-b shadow-lg" style={{ backgroundColor: 'hsl(220 15% 20%)' }}>
           <nav className="max-w-5xl mx-auto px-4 py-2">
@@ -101,7 +97,6 @@ export default function AdminDashboard() {
         {activeTab === 'dashboard' && <DashboardPanel />}
         {activeTab === 'orders' && <OrdersPanel />}
         {activeTab === 'menu' && <MenuPanel />}
-        {activeTab === 'promos' && <PromotionsPanel />}
         {activeTab === 'settings' && <SettingsPanel />}
       </main>
     </div>
