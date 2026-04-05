@@ -398,6 +398,31 @@ export function MenuPanel() {
                 </Select>
               </div>
             </div>
+            {/* Pizza prices per size */}
+            {formIsPizza && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <Label className="font-semibold">🍕 Preço por tamanho</Label>
+                <p className="text-xs text-muted-foreground">Deixe em branco para usar o preço padrão acima</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Pequena</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 25.00" value={form.pizza_prices.small} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, small: e.target.value } })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Média</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 35.00" value={form.pizza_prices.medium} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, medium: e.target.value } })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Grande</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 45.00" value={form.pizza_prices.large} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, large: e.target.value } })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Gigante</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 55.00" value={form.pizza_prices.giant} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, giant: e.target.value } })} />
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <Label>Ingredientes (separados por vírgula)</Label>
               <Input value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder="queijo, tomate, cebola" />
