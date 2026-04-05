@@ -238,6 +238,20 @@ export function MenuPanel() {
 
   const leafCategories = categories.filter((c) => !categories.some((child) => child.parent_id === c.id));
 
+  const isCategoryPizza = (catId: string) => {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return false;
+    const slug = cat.slug.toLowerCase();
+    if (slug.includes('pizza')) return true;
+    if (cat.parent_id) {
+      const parent = categories.find((c) => c.id === cat.parent_id);
+      if (parent && parent.slug.toLowerCase().includes('pizza')) return true;
+    }
+    return false;
+  };
+
+  const formIsPizza = isCategoryPizza(form.category_id);
+
   const isEditingParentCategory = editingCat ? !editingCat.parent_id && categories.some(c => c.parent_id === editingCat.id) : false;
   const isEditingSubcategory = editingCat ? !!editingCat.parent_id : false;
 
