@@ -32,6 +32,13 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const pizzaPrices = (product as any).pizza_prices as Record<string, number> | null;
   const displayPrice = hasPromo ? promoPrice : product.price;
 
+  // Get the smallest pizza price for card display
+  const smallestPizzaPrice = useMemo(() => {
+    if (!pizzaPrices) return null;
+    const prices = Object.values(pizzaPrices).filter((p) => p > 0);
+    return prices.length > 0 ? Math.min(...prices) : null;
+  }, [pizzaPrices]);
+
   const isPizza = useMemo(
     () => isPizzaCategory(categories, product.category_id),
     [categories, product.category_id]
