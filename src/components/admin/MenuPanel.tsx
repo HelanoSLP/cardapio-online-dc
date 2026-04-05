@@ -187,6 +187,13 @@ export function MenuPanel() {
     if (!form.name || !form.price || !form.category_id) { toast.error('Preencha os campos obrigatórios'); return; }
     setUploading(true);
     try {
+      const isCatPizza = isCategoryPizza(form.category_id);
+      const pizzaPricesData = isCatPizza ? {
+        small: form.pizza_prices.small ? parseFloat(form.pizza_prices.small) : null,
+        medium: form.pizza_prices.medium ? parseFloat(form.pizza_prices.medium) : null,
+        large: form.pizza_prices.large ? parseFloat(form.pizza_prices.large) : null,
+        giant: form.pizza_prices.giant ? parseFloat(form.pizza_prices.giant) : null,
+      } : null;
       const data: any = {
         name: form.name.trim(), description: form.description.trim() || null,
         price: parseFloat(form.price), category_id: form.category_id,
@@ -195,6 +202,7 @@ export function MenuPanel() {
         promo_price: form.hasPromo && form.promo_price ? parseFloat(form.promo_price) : null,
         cashback_active: form.hasCashback,
         cashback_percent: form.hasCashback && form.cashback_percent ? parseFloat(form.cashback_percent) : 0,
+        pizza_prices: pizzaPricesData,
       };
       if (editingProduct) {
         data.image_url = await uploadImage(editingProduct.id);
