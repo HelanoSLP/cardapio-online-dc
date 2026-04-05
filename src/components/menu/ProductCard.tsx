@@ -214,7 +214,11 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{product.description}</p>
           </div>
           <div className="flex items-center gap-2">
-            {hasPromo ? (
+            {isPizza && smallestPizzaPrice ? (
+              <p className="font-bold text-primary text-lg">
+                a partir de {formatPrice(smallestPizzaPrice)}
+              </p>
+            ) : hasPromo ? (
               <>
                 <span className="text-sm text-muted-foreground line-through">{formatPrice(product.price)}</span>
                 <span className="font-bold text-lg text-green-600">{formatPrice(promoPrice)}</span>
