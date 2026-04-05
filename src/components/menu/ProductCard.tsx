@@ -240,7 +240,22 @@ export function ProductCard({ product, categories }: ProductCardProps) {
           )}
           <p className="text-sm text-muted-foreground">{product.description}</p>
           
-          {hasPromo ? (
+          {/* Dynamic price display based on selected size */}
+          {isPizza && !selectedSize ? (
+            <p className="text-sm text-muted-foreground italic">Selecione um tamanho para ver o preço</p>
+          ) : isPizza && selectedSize ? (
+            <div className="flex items-center gap-2">
+              {hasPromo ? (
+                <>
+                  <span className="text-base text-muted-foreground line-through">{formatPrice(sizePrice ?? product.price)}</span>
+                  <span className="font-bold text-xl text-green-600">{formatPrice(promoPrice)}</span>
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">PROMO</span>
+                </>
+              ) : (
+                <p className="font-bold text-primary text-xl">{formatPrice(sizePrice ?? product.price)}</p>
+              )}
+            </div>
+          ) : hasPromo ? (
             <div className="flex items-center gap-2">
               <span className="text-base text-muted-foreground line-through">{formatPrice(product.price)}</span>
               <span className="font-bold text-xl text-green-600">{formatPrice(promoPrice)}</span>
