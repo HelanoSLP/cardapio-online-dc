@@ -139,7 +139,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     addItem({
       productId: product.id,
       name: displayName,
-      price: displayPrice,
+      price: activePrice,
       quantity,
       notes: notes.trim() || undefined,
       extraIngredients: addedExtras.length > 0 ? addedExtras : undefined,
