@@ -251,29 +251,34 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
               <div className="grid grid-cols-2 gap-2">
-                {PIZZA_SIZES.map((size) => (
-                  <button
-                    key={size.key}
-                    onClick={() => {
-                      setSelectedSize(size.key);
-                      // Keep the original flavor selected, reset others
-                      if (isPizza) {
-                        setSelectedFlavors([product.name]);
-                      } else {
-                        setSelectedFlavors([]);
-                      }
-                    }}
-                    className={cn(
-                      'rounded-lg border p-2 text-sm font-medium transition-colors text-center',
-                      selectedSize === size.key
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-card hover:bg-muted'
-                    )}
-                  >
-                    {size.label}
-                    <span className="block text-xs opacity-70">até {size.maxFlavors} sabores</span>
-                  </button>
-                ))}
+                {PIZZA_SIZES.map((size) => {
+                  const sPrice = pizzaPrices && pizzaPrices[size.key] ? pizzaPrices[size.key] : null;
+                  return (
+                    <button
+                      key={size.key}
+                      onClick={() => {
+                        setSelectedSize(size.key);
+                        if (isPizza) {
+                          setSelectedFlavors([product.name]);
+                        } else {
+                          setSelectedFlavors([]);
+                        }
+                      }}
+                      className={cn(
+                        'rounded-lg border p-2 text-sm font-medium transition-colors text-center',
+                        selectedSize === size.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-card hover:bg-muted'
+                      )}
+                    >
+                      {size.label}
+                      {sPrice != null && (
+                        <span className="block text-xs font-bold">{formatPrice(sPrice)}</span>
+                      )}
+                      <span className="block text-xs opacity-70">até {size.maxFlavors} sabores</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
