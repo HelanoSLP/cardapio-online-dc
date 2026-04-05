@@ -240,6 +240,7 @@ export type Database = {
           image_url: string | null
           ingredients: string[] | null
           name: string
+          pizza_prices: Json | null
           price: number
           promo_price: number | null
           sort_order: number
@@ -256,6 +257,7 @@ export type Database = {
           image_url?: string | null
           ingredients?: string[] | null
           name: string
+          pizza_prices?: Json | null
           price: number
           promo_price?: number | null
           sort_order?: number
@@ -272,6 +274,7 @@ export type Database = {
           image_url?: string | null
           ingredients?: string[] | null
           name?: string
+          pizza_prices?: Json | null
           price?: number
           promo_price?: number | null
           sort_order?: number

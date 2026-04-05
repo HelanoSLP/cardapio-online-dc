@@ -29,6 +29,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const hasPromo = promoPrice != null && promoPrice > 0;
   const cashbackActive = (product as any).cashback_active as boolean;
   const cashbackPercent = (product as any).cashback_percent as number;
+  const pizzaPrices = (product as any).pizza_prices as Record<string, number> | null;
   const displayPrice = hasPromo ? promoPrice : product.price;
 
   const isPizza = useMemo(
@@ -110,8 +111,14 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     }
   };
 
+  // Calculate price based on selected pizza size
+  const sizePrice = effectiveSize && pizzaPrices && pizzaPrices[effectiveSize]
+    ? pizzaPrices[effectiveSize]
+    : null;
+  const activePrice = sizePrice ?? displayPrice;
+
   const extrasTotal = addedExtras.reduce((s, e) => s + e.price, 0);
-  const itemTotal = (displayPrice + extrasTotal) * quantity;
+  const itemTotal = (activePrice + extrasTotal) * quantity;
 
   const handleAdd = () => {
     const flavorNames = selectedFlavors.length > 1
@@ -132,7 +139,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     addItem({
       productId: product.id,
       name: displayName,
-      price: displayPrice,
+      price: activePrice,
       quantity,
       notes: notes.trim() || undefined,
       extraIngredients: addedExtras.length > 0 ? addedExtras : undefined,
@@ -244,29 +251,34 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
               <div className="grid grid-cols-2 gap-2">
-                {PIZZA_SIZES.map((size) => (
-                  <button
-                    key={size.key}
-                    onClick={() => {
-                      setSelectedSize(size.key);
-                      // Keep the original flavor selected, reset others
-                      if (isPizza) {
-                        setSelectedFlavors([product.name]);
-                      } else {
-                        setSelectedFlavors([]);
-                      }
-                    }}
-                    className={cn(
-                      'rounded-lg border p-2 text-sm font-medium transition-colors text-center',
-                      selectedSize === size.key
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-card hover:bg-muted'
-                    )}
-                  >
-                    {size.label}
-                    <span className="block text-xs opacity-70">até {size.maxFlavors} sabores</span>
-                  </button>
-                ))}
+                {PIZZA_SIZES.map((size) => {
+                  const sPrice = pizzaPrices && pizzaPrices[size.key] ? pizzaPrices[size.key] : null;
+                  return (
+                    <button
+                      key={size.key}
+                      onClick={() => {
+                        setSelectedSize(size.key);
+                        if (isPizza) {
+                          setSelectedFlavors([product.name]);
+                        } else {
+                          setSelectedFlavors([]);
+                        }
+                      }}
+                      className={cn(
+                        'rounded-lg border p-2 text-sm font-medium transition-colors text-center',
+                        selectedSize === size.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-card hover:bg-muted'
+                      )}
+                    >
+                      {size.label}
+                      {sPrice != null && (
+                        <span className="block text-xs font-bold">{formatPrice(sPrice)}</span>
+                      )}
+                      <span className="block text-xs opacity-70">até {size.maxFlavors} sabores</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

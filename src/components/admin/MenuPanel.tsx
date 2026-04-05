@@ -31,6 +31,7 @@ export function MenuPanel() {
     name: '', description: '', price: '', category_id: '', ingredients: '', active: true, image_url: null as string | null,
     hasPromo: false, promo_price: '',
     hasCashback: false, cashback_percent: '',
+    pizza_prices: { small: '', medium: '', large: '', giant: '' } as Record<string, string>,
   });
 
   // Category dialog state
@@ -131,7 +132,7 @@ export function MenuPanel() {
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '' });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '' } });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
@@ -139,12 +140,19 @@ export function MenuPanel() {
   const openEdit = (p: Product) => {
     setEditingProduct(p);
     const promoPrice = (p as any).promo_price;
+    const pp = (p as any).pizza_prices as Record<string, number> | null;
     setForm({
       name: p.name, description: p.description || '', price: String(p.price),
       category_id: p.category_id, ingredients: p.ingredients?.join(', ') || '', active: p.active, image_url: p.image_url,
       hasPromo: promoPrice != null && promoPrice > 0, promo_price: promoPrice ? String(promoPrice) : '',
       hasCashback: (p as any).cashback_active ?? false,
       cashback_percent: (p as any).cashback_percent ? String((p as any).cashback_percent) : '',
+      pizza_prices: {
+        small: pp?.small ? String(pp.small) : '',
+        medium: pp?.medium ? String(pp.medium) : '',
+        large: pp?.large ? String(pp.large) : '',
+        giant: pp?.giant ? String(pp.giant) : '',
+      },
     });
     setImageFile(null); setImagePreview(p.image_url || null);
     setProductDialog(true);
@@ -179,6 +187,13 @@ export function MenuPanel() {
     if (!form.name || !form.price || !form.category_id) { toast.error('Preencha os campos obrigatórios'); return; }
     setUploading(true);
     try {
+      const isCatPizza = isCategoryPizza(form.category_id);
+      const pizzaPricesData = isCatPizza ? {
+        small: form.pizza_prices.small ? parseFloat(form.pizza_prices.small) : null,
+        medium: form.pizza_prices.medium ? parseFloat(form.pizza_prices.medium) : null,
+        large: form.pizza_prices.large ? parseFloat(form.pizza_prices.large) : null,
+        giant: form.pizza_prices.giant ? parseFloat(form.pizza_prices.giant) : null,
+      } : null;
       const data: any = {
         name: form.name.trim(), description: form.description.trim() || null,
         price: parseFloat(form.price), category_id: form.category_id,
@@ -187,6 +202,7 @@ export function MenuPanel() {
         promo_price: form.hasPromo && form.promo_price ? parseFloat(form.promo_price) : null,
         cashback_active: form.hasCashback,
         cashback_percent: form.hasCashback && form.cashback_percent ? parseFloat(form.cashback_percent) : 0,
+        pizza_prices: pizzaPricesData,
       };
       if (editingProduct) {
         data.image_url = await uploadImage(editingProduct.id);
@@ -221,6 +237,20 @@ export function MenuPanel() {
   const getCategoryName = (id: string) => categories.find((c) => c.id === id)?.name || '';
 
   const leafCategories = categories.filter((c) => !categories.some((child) => child.parent_id === c.id));
+
+  const isCategoryPizza = (catId: string) => {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return false;
+    const slug = cat.slug.toLowerCase();
+    if (slug.includes('pizza')) return true;
+    if (cat.parent_id) {
+      const parent = categories.find((c) => c.id === cat.parent_id);
+      if (parent && parent.slug.toLowerCase().includes('pizza')) return true;
+    }
+    return false;
+  };
+
+  const formIsPizza = isCategoryPizza(form.category_id);
 
   const isEditingParentCategory = editingCat ? !editingCat.parent_id && categories.some(c => c.parent_id === editingCat.id) : false;
   const isEditingSubcategory = editingCat ? !!editingCat.parent_id : false;
@@ -368,6 +398,31 @@ export function MenuPanel() {
                 </Select>
               </div>
             </div>
+            {/* Pizza prices per size */}
+            {formIsPizza && (
+              <div className="space-y-3 rounded-lg border p-3">
+                <Label className="font-semibold">🍕 Preço por tamanho</Label>
+                <p className="text-xs text-muted-foreground">Deixe em branco para usar o preço padrão acima</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Pequena</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 25.00" value={form.pizza_prices.small} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, small: e.target.value } })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Média</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 35.00" value={form.pizza_prices.medium} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, medium: e.target.value } })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Grande</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 45.00" value={form.pizza_prices.large} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, large: e.target.value } })} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Gigante</Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 55.00" value={form.pizza_prices.giant} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, giant: e.target.value } })} />
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <Label>Ingredientes (separados por vírgula)</Label>
               <Input value={form.ingredients} onChange={(e) => setForm({ ...form, ingredients: e.target.value })} placeholder="queijo, tomate, cebola" />
