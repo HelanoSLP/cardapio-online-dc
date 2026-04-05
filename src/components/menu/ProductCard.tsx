@@ -32,6 +32,13 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const pizzaPrices = (product as any).pizza_prices as Record<string, number> | null;
   const displayPrice = hasPromo ? promoPrice : product.price;
 
+  // Get the smallest pizza price for card display
+  const smallestPizzaPrice = useMemo(() => {
+    if (!pizzaPrices) return null;
+    const prices = Object.values(pizzaPrices).filter((p) => p > 0);
+    return prices.length > 0 ? Math.min(...prices) : null;
+  }, [pizzaPrices]);
+
   const isPizza = useMemo(
     () => isPizzaCategory(categories, product.category_id),
     [categories, product.category_id]
@@ -207,7 +214,11 @@ export function ProductCard({ product, categories }: ProductCardProps) {
             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{product.description}</p>
           </div>
           <div className="flex items-center gap-2">
-            {hasPromo ? (
+            {isPizza && smallestPizzaPrice ? (
+              <p className="font-bold text-primary text-lg">
+                a partir de {formatPrice(smallestPizzaPrice)}
+              </p>
+            ) : hasPromo ? (
               <>
                 <span className="text-sm text-muted-foreground line-through">{formatPrice(product.price)}</span>
                 <span className="font-bold text-lg text-green-600">{formatPrice(promoPrice)}</span>
@@ -229,7 +240,22 @@ export function ProductCard({ product, categories }: ProductCardProps) {
           )}
           <p className="text-sm text-muted-foreground">{product.description}</p>
           
-          {hasPromo ? (
+          {/* Dynamic price display based on selected size */}
+          {isPizza && !selectedSize ? (
+            <p className="text-sm text-muted-foreground italic">Selecione um tamanho para ver o preço</p>
+          ) : isPizza && selectedSize ? (
+            <div className="flex items-center gap-2">
+              {hasPromo ? (
+                <>
+                  <span className="text-base text-muted-foreground line-through">{formatPrice(sizePrice ?? product.price)}</span>
+                  <span className="font-bold text-xl text-green-600">{formatPrice(promoPrice)}</span>
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">PROMO</span>
+                </>
+              ) : (
+                <p className="font-bold text-primary text-xl">{formatPrice(sizePrice ?? product.price)}</p>
+              )}
+            </div>
+          ) : hasPromo ? (
             <div className="flex items-center gap-2">
               <span className="text-base text-muted-foreground line-through">{formatPrice(product.price)}</span>
               <span className="font-bold text-xl text-green-600">{formatPrice(promoPrice)}</span>
