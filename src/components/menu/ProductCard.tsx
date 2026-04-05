@@ -111,8 +111,14 @@ export function ProductCard({ product, categories }: ProductCardProps) {
     }
   };
 
+  // Calculate price based on selected pizza size
+  const sizePrice = effectiveSize && pizzaPrices && pizzaPrices[effectiveSize]
+    ? pizzaPrices[effectiveSize]
+    : null;
+  const activePrice = sizePrice ?? displayPrice;
+
   const extrasTotal = addedExtras.reduce((s, e) => s + e.price, 0);
-  const itemTotal = (displayPrice + extrasTotal) * quantity;
+  const itemTotal = (activePrice + extrasTotal) * quantity;
 
   const handleAdd = () => {
     const flavorNames = selectedFlavors.length > 1
