@@ -29,6 +29,7 @@ export function ProductCard({ product, categories }: ProductCardProps) {
   const hasPromo = promoPrice != null && promoPrice > 0;
   const cashbackActive = (product as any).cashback_active as boolean;
   const cashbackPercent = (product as any).cashback_percent as number;
+  const pizzaPrices = (product as any).pizza_prices as Record<string, number> | null;
   const displayPrice = hasPromo ? promoPrice : product.price;
 
   const isPizza = useMemo(
