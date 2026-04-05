@@ -140,12 +140,19 @@ export function MenuPanel() {
   const openEdit = (p: Product) => {
     setEditingProduct(p);
     const promoPrice = (p as any).promo_price;
+    const pp = (p as any).pizza_prices as Record<string, number> | null;
     setForm({
       name: p.name, description: p.description || '', price: String(p.price),
       category_id: p.category_id, ingredients: p.ingredients?.join(', ') || '', active: p.active, image_url: p.image_url,
       hasPromo: promoPrice != null && promoPrice > 0, promo_price: promoPrice ? String(promoPrice) : '',
       hasCashback: (p as any).cashback_active ?? false,
       cashback_percent: (p as any).cashback_percent ? String((p as any).cashback_percent) : '',
+      pizza_prices: {
+        small: pp?.small ? String(pp.small) : '',
+        medium: pp?.medium ? String(pp.medium) : '',
+        large: pp?.large ? String(pp.large) : '',
+        giant: pp?.giant ? String(pp.giant) : '',
+      },
     });
     setImageFile(null); setImagePreview(p.image_url || null);
     setProductDialog(true);
