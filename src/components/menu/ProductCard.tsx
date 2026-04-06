@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Product, Category, isPizzaCategory, isComboCategory, detectPizzaSizeFromName, getPizzaCategoryIds, PIZZA_SIZES, PizzaSize } from '@/hooks/useMenu';
 import { useCartStore, ExtraIngredientItem } from '@/stores/cartStore';
-import { Plus, Minus, Check } from 'lucide-react';
+import { Plus, Minus, Check, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
