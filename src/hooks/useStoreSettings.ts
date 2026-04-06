@@ -8,6 +8,7 @@ export interface StoreSettings {
   wallpaper_url: string;
   delivery_fee: number;
   store_open: boolean;
+  estimated_delivery_time: string;
 }
 
 const DEFAULTS: StoreSettings = {
@@ -17,6 +18,7 @@ const DEFAULTS: StoreSettings = {
   wallpaper_url: '',
   delivery_fee: 7,
   store_open: true,
+  estimated_delivery_time: '',
 };
 
 export function useStoreSettings() {
@@ -36,6 +38,7 @@ export function useStoreSettings() {
         wallpaper_url: map.wallpaper_url || map.banner_url || '',
         delivery_fee: parseFloat(map.delivery_fee) || DEFAULTS.delivery_fee,
         store_open: map.store_open !== 'false',
+        estimated_delivery_time: map.estimated_delivery_time || '',
       };
     },
     staleTime: 1000 * 60 * 5,

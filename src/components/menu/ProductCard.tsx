@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Product, Category, isPizzaCategory, isComboCategory, detectPizzaSizeFromName, getPizzaCategoryIds, PIZZA_SIZES, PizzaSize } from '@/hooks/useMenu';
 import { useCartStore, ExtraIngredientItem } from '@/stores/cartStore';
-import { Plus, Minus, Check } from 'lucide-react';
+import { Plus, Minus, Check, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,9 +14,11 @@ import { cn } from '@/lib/utils';
 interface ProductCardProps {
   product: Product;
   categories?: Category[];
+  isFavorite?: boolean;
+  onToggleFavorite?: (productId: string) => void;
 }
 
-export function ProductCard({ product, categories }: ProductCardProps) {
+export function ProductCard({ product, categories, isFavorite, onToggleFavorite }: ProductCardProps) {
   const [open, setOpen] = useState(false);
   const [addedExtras, setAddedExtras] = useState<ExtraIngredientItem[]>([]);
   const [notes, setNotes] = useState('');
@@ -197,6 +199,15 @@ export function ProductCard({ product, categories }: ProductCardProps) {
         onClick={handleOpen}
         className="flex gap-3 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md relative"
       >
+        {/* Favorite button */}
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(product.id); }}
+            className="absolute top-2 right-2 z-10 p-1"
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+          </button>
+        )}
         {/* Cashback badge */}
         {cashbackActive && (
           <div className="absolute top-0 left-0 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-xl rounded-br-xl z-10">

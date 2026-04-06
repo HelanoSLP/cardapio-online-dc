@@ -12,6 +12,7 @@ interface Settings {
   logo_url: string;
   delivery_fee: string;
   store_open: string;
+  estimated_delivery_time: string;
 }
 
 export function SettingsPanel() {
@@ -20,6 +21,7 @@ export function SettingsPanel() {
     logo_url: '',
     delivery_fee: '7',
     store_open: 'true',
+    estimated_delivery_time: '',
   });
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -70,6 +72,7 @@ export function SettingsPanel() {
         { key: 'logo_url', value: logoUrl },
         { key: 'delivery_fee', value: settings.delivery_fee },
         { key: 'store_open', value: settings.store_open },
+        { key: 'estimated_delivery_time', value: settings.estimated_delivery_time },
       ];
 
       for (const u of updates) {
@@ -143,6 +146,18 @@ export function SettingsPanel() {
           <Label>Valor da taxa (R$)</Label>
           <Input type="number" step="0.50" min="0" value={settings.delivery_fee} onChange={(e) => update('delivery_fee', e.target.value)} placeholder="7.00" />
         </div>
+      </section>
+
+      {/* Estimated Delivery Time */}
+      <section className="rounded-xl border bg-card p-4 space-y-4">
+        <h2 className="text-base font-bold">⏱️ Tempo Estimado de Entrega</h2>
+        <div>
+          <Label>Tempo estimado (ex: 30-50 min)</Label>
+          <Input value={settings.estimated_delivery_time} onChange={(e) => update('estimated_delivery_time', e.target.value)} placeholder="30-50 min" />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Exibido na página de confirmação do pedido. Deixe vazio para não exibir.
+        </p>
       </section>
 
       <Button onClick={handleSave} disabled={saving} className="w-full py-5 text-base">

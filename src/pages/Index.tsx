@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { useFavorites } from "@/hooks/useFavorites";
 import { CategoryBar } from "@/components/menu/CategoryBar";
 import { ProductCard } from "@/components/menu/ProductCard";
 import { CartFloatingButton } from "@/components/cart/CartFloatingButton";
@@ -8,11 +9,14 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { Search, X, Heart } from "lucide-react";
 
 const Index = () => {
   const [activeKey, setActiveKey] = useState<string | undefined>();
+  const [searchQuery, setSearchQuery] = useState("");
   const { data: categories, isLoading: loadingCategories } = useCategories();
   const { data: settings } = useStoreSettings();
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const barItems = useCategoryBarItems(categories);
 
   const activeSlugs = useMemo(() => {
@@ -23,22 +27,46 @@ const Index = () => {
 
   const { data: products, isLoading: loadingProducts } = useProducts(activeSlugs);
 
-  // Fetch products with active cashback or promo for the "Promoções" tab
-  const { data: promoProducts } = useQuery({
-    queryKey: ["promo-cashback-products"],
+  // Fetch all products for search and favorites
+  const { data: allProducts } = useQuery({
+    queryKey: ["all-products"],
     queryFn: async () => {
-      // Get products with promo_price set OR cashback_active
       const { data } = await supabase
         .from("products")
         .select("*, categories!inner(slug, name, sort_order)")
         .eq("active", true)
         .order("sort_order");
-      // Filter client-side for promo or cashback
+      return data || [];
+    },
+  });
+
+  // Fetch products with active cashback or promo for the "Promoções" tab
+  const { data: promoProducts } = useQuery({
+    queryKey: ["promo-cashback-products"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("*, categories!inner(slug, name, sort_order)")
+        .eq("active", true)
+        .order("sort_order");
       return (data || []).filter((p: any) => 
         (p.promo_price != null && p.promo_price > 0) || p.cashback_active
       );
     },
   });
+
+  // Search filtering
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim() || !allProducts) return null;
+    const q = searchQuery.toLowerCase().trim();
+    return allProducts.filter((p: any) => p.name.toLowerCase().includes(q));
+  }, [searchQuery, allProducts]);
+
+  // Favorite products
+  const favoriteProducts = useMemo(() => {
+    if (!allProducts || favorites.size === 0) return [];
+    return allProducts.filter((p: any) => favorites.has(p.id));
+  }, [allProducts, favorites]);
 
   const isGrouped = activeSlugs && activeSlugs.length > 1;
   const groupedProducts = useMemo(() => {
@@ -62,52 +90,85 @@ const Index = () => {
     promoProducts && promoProducts.length > 0 ? (
       <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
         {promoProducts.map((product: any) => (
-          <ProductCard key={product.id} product={product} categories={categories} />
+          <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
         ))}
       </div>
     ) : (
       <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma promoção ativa no momento.</p>
     );
 
+  const renderProductGrid = (items: any[]) => (
+    <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+      {items.map((product: any) => (
+        <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
+      ))}
+    </div>
+  );
+
   const productsContent = (
     <>
-      {loadingProducts ? (
-        <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
+      {/* Favorites section */}
+      {!searchQuery && favoriteProducts.length > 0 && !activeSlugs && (
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+            <Heart className="h-5 w-5 fill-red-500 text-red-500" /> Favoritos
+          </h2>
+          {renderProductGrid(favoriteProducts)}
         </div>
-      ) : groupedProducts ? (
-        <div className="space-y-6">
-          {groupedProducts.map(([catName, items]) => (
-            <div key={catName}>
-              <h2 className="text-lg font-bold text-foreground mb-3">{catName}</h2>
-              <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
-                {items.map((product) => (
-                  <ProductCard key={product.id} product={product} categories={categories} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
-          {products?.map((product) => (
-            <ProductCard key={product.id} product={product} categories={categories} />
-          ))}
-          {products?.length === 0 && (
-            <p className="text-center text-muted-foreground py-12 col-span-full">
-              Nenhum produto encontrado nesta categoria.
+      )}
+
+      {/* Search results */}
+      {searchQuery && searchResults ? (
+        <>
+          {searchResults.length > 0 ? (
+            renderProductGrid(searchResults)
+          ) : (
+            <p className="text-center text-muted-foreground py-12">
+              Nenhum produto encontrado para "{searchQuery}".
             </p>
           )}
-        </div>
+        </>
+      ) : (
+        <>
+          {loadingProducts ? (
+            <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-28 rounded-xl" />
+              ))}
+            </div>
+          ) : groupedProducts ? (
+            <div className="space-y-6">
+              {groupedProducts.map(([catName, items]) => (
+                <div key={catName}>
+                  <h2 className="text-lg font-bold text-foreground mb-3">{catName}</h2>
+                  <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+                    {items.map((product) => (
+                      <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-3">
+              {products?.map((product) => (
+                <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
+              ))}
+              {products?.length === 0 && (
+                <p className="text-center text-muted-foreground py-12 col-span-full">
+                  Nenhum produto encontrado nesta categoria.
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
     </>
   );
 
   return (
     <div className="min-h-screen pb-24 bg-white">
-      {/* Sticky top section: header + categories + tabs */}
+      {/* Sticky top section: header + categories + search + tabs */}
       <div className="sticky top-0 z-40">
         {/* Header bar */}
         <header className="border-b bg-primary text-primary-foreground">
@@ -117,7 +178,15 @@ const Index = () => {
             ) : (
               <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-12 object-contain" />
             )}
-            <span className="text-sm font-bold text-white">Cardápio online da DC</span>
+            <span className="text-sm font-bold text-white flex-1">Cardápio online da DC</span>
+            {/* Open/Closed badge */}
+            <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+              isOpen 
+                ? 'bg-green-500/20 text-green-100' 
+                : 'bg-red-500/20 text-red-100'
+            }`}>
+              {isOpen ? '🟢 Aberto' : '🔴 Fechado'}
+            </span>
           </div>
         </header>
 
@@ -141,6 +210,27 @@ const Index = () => {
             ) : (
               <CategoryBar items={barItems} active={activeKey} onSelect={setActiveKey} />
             )}
+          </div>
+        </div>
+
+        {/* Search bar */}
+        <div className="border-b bg-white">
+          <div className="mx-auto max-w-5xl px-4 py-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar no cardápio..."
+                className="w-full pl-9 pr-9 py-2 text-sm rounded-full border border-border bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
