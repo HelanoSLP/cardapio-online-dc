@@ -38,6 +38,7 @@ export function useStoreSettings() {
         wallpaper_url: map.wallpaper_url || map.banner_url || '',
         delivery_fee: parseFloat(map.delivery_fee) || DEFAULTS.delivery_fee,
         store_open: map.store_open !== 'false',
+        estimated_delivery_time: map.estimated_delivery_time || '',
       };
     },
     staleTime: 1000 * 60 * 5,
