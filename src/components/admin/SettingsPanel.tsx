@@ -12,6 +12,7 @@ interface Settings {
   logo_url: string;
   delivery_fee: string;
   store_open: string;
+  estimated_delivery_time: string;
 }
 
 export function SettingsPanel() {
