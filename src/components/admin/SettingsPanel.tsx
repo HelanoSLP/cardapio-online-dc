@@ -21,6 +21,7 @@ export function SettingsPanel() {
     logo_url: '',
     delivery_fee: '7',
     store_open: 'true',
+    estimated_delivery_time: '',
   });
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
