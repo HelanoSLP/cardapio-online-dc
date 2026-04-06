@@ -393,26 +393,9 @@ export function MenuPanel() {
               <Label>Descrição</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} maxLength={300} className="resize-none" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Preço *</Label>
-                <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-              </div>
-              <div>
-                <Label>Categoria *</Label>
-                <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {leafCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {/* Pizza prices per size */}
-            {formIsPizza && (
+            {formIsPizza ? (
               <div className="space-y-3 rounded-lg border p-3">
-                <Label className="font-semibold">🍕 Preço por tamanho</Label>
-                <p className="text-xs text-muted-foreground">Deixe em branco para usar o preço padrão acima</p>
+                <Label className="font-semibold">🍕 Preço por tamanho *</Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">Pequena</Label>
@@ -431,6 +414,33 @@ export function MenuPanel() {
                     <Input type="number" step="0.01" placeholder="Ex: 55.00" value={form.pizza_prices.giant} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, giant: e.target.value } })} />
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Preço *</Label>
+                  <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Categoria *</Label>
+                  <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {leafCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            {formIsPizza && (
+              <div>
+                <Label>Categoria *</Label>
+                <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {leafCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             )}
             <div>
