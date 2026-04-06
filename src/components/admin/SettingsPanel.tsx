@@ -72,6 +72,7 @@ export function SettingsPanel() {
         { key: 'logo_url', value: logoUrl },
         { key: 'delivery_fee', value: settings.delivery_fee },
         { key: 'store_open', value: settings.store_open },
+        { key: 'estimated_delivery_time', value: settings.estimated_delivery_time },
       ];
 
       for (const u of updates) {
