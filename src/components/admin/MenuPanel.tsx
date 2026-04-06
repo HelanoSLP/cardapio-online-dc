@@ -184,19 +184,29 @@ export function MenuPanel() {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.price || !form.category_id) { toast.error('Preencha os campos obrigatórios'); return; }
+    const isCatPizza = isCategoryPizza(form.category_id);
+    if (!form.name || !form.category_id) { toast.error('Preencha os campos obrigatórios'); return; }
+    if (isCatPizza) {
+      const hasAnyPrice = Object.values(form.pizza_prices).some(v => v && parseFloat(v) > 0);
+      if (!hasAnyPrice) { toast.error('Preencha pelo menos um preço por tamanho'); return; }
+    } else {
+      if (!form.price) { toast.error('Preencha o preço'); return; }
+    }
     setUploading(true);
     try {
-      const isCatPizza = isCategoryPizza(form.category_id);
       const pizzaPricesData = isCatPizza ? {
         small: form.pizza_prices.small ? parseFloat(form.pizza_prices.small) : null,
         medium: form.pizza_prices.medium ? parseFloat(form.pizza_prices.medium) : null,
         large: form.pizza_prices.large ? parseFloat(form.pizza_prices.large) : null,
         giant: form.pizza_prices.giant ? parseFloat(form.pizza_prices.giant) : null,
       } : null;
+      // For pizza, use smallest pizza price as the base price
+      const basePrice = isCatPizza
+        ? Math.min(...Object.values(form.pizza_prices).filter(v => v && parseFloat(v) > 0).map(v => parseFloat(v)))
+        : parseFloat(form.price);
       const data: any = {
         name: form.name.trim(), description: form.description.trim() || null,
-        price: parseFloat(form.price), category_id: form.category_id,
+        price: basePrice, category_id: form.category_id,
         ingredients: form.ingredients ? form.ingredients.split(',').map((s) => s.trim()).filter(Boolean) : null,
         active: form.active,
         promo_price: form.hasPromo && form.promo_price ? parseFloat(form.promo_price) : null,
