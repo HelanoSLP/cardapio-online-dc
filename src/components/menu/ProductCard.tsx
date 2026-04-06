@@ -199,6 +199,15 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
         onClick={handleOpen}
         className="flex gap-3 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md relative"
       >
+        {/* Favorite button */}
+        {onToggleFavorite && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(product.id); }}
+            className="absolute top-2 right-2 z-10 p-1"
+          >
+            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+          </button>
+        )}
         {/* Cashback badge */}
         {cashbackActive && (
           <div className="absolute top-0 left-0 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-xl rounded-br-xl z-10">
