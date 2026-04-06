@@ -14,9 +14,11 @@ import { cn } from '@/lib/utils';
 interface ProductCardProps {
   product: Product;
   categories?: Category[];
+  isFavorite?: boolean;
+  onToggleFavorite?: (productId: string) => void;
 }
 
-export function ProductCard({ product, categories }: ProductCardProps) {
+export function ProductCard({ product, categories, isFavorite, onToggleFavorite }: ProductCardProps) {
   const [open, setOpen] = useState(false);
   const [addedExtras, setAddedExtras] = useState<ExtraIngredientItem[]>([]);
   const [notes, setNotes] = useState('');
