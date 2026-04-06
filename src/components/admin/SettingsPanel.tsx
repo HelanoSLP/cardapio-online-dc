@@ -148,6 +148,18 @@ export function SettingsPanel() {
         </div>
       </section>
 
+      {/* Estimated Delivery Time */}
+      <section className="rounded-xl border bg-card p-4 space-y-4">
+        <h2 className="text-base font-bold">⏱️ Tempo Estimado de Entrega</h2>
+        <div>
+          <Label>Tempo estimado (ex: 30-50 min)</Label>
+          <Input value={settings.estimated_delivery_time} onChange={(e) => update('estimated_delivery_time', e.target.value)} placeholder="30-50 min" />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Exibido na página de confirmação do pedido. Deixe vazio para não exibir.
+        </p>
+      </section>
+
       <Button onClick={handleSave} disabled={saving} className="w-full py-5 text-base">
         <Save className="h-4 w-4 mr-2" />
         {saving ? 'Salvando...' : 'Salvar Configurações'}
