@@ -443,22 +443,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_order: {
-        Args: {
-          p_address_neighborhood: string
-          p_address_number: string
-          p_address_reference?: string
-          p_address_street: string
-          p_change_for?: number
-          p_customer_name: string
-          p_customer_whatsapp: string
-          p_items?: Json
-          p_notes?: string
-          p_payment_method?: Database["public"]["Enums"]["payment_method"]
-          p_total?: number
-        }
-        Returns: Json
-      }
+      create_order:
+        | {
+            Args: {
+              p_address_neighborhood: string
+              p_address_number: string
+              p_address_reference?: string
+              p_address_street: string
+              p_change_for?: number
+              p_customer_name: string
+              p_customer_whatsapp: string
+              p_items?: Json
+              p_notes?: string
+              p_payment_method?: Database["public"]["Enums"]["payment_method"]
+              p_total?: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_address_neighborhood: string
+              p_address_number: string
+              p_address_reference?: string
+              p_address_street: string
+              p_change_for?: number
+              p_customer_name: string
+              p_customer_whatsapp: string
+              p_items?: Json
+              p_notes?: string
+              p_payment_method?: Database["public"]["Enums"]["payment_method"]
+              p_total?: number
+              p_user_id?: string
+            }
+            Returns: Json
+          }
       generate_cashback_coupon: {
         Args: { p_discount: number; p_whatsapp: string }
         Returns: string
