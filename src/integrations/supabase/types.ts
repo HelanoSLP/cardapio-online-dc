@@ -126,6 +126,35 @@ export type Database = {
         }
         Relationships: []
       }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -191,6 +220,7 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
           total: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address_neighborhood: string
@@ -208,6 +238,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           total: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address_neighborhood?: string
@@ -225,6 +256,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"]
           total?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -289,6 +321,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string | null
+          updated_at: string
+          user_id: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
       }
       promotions: {
         Row: {
@@ -384,22 +443,40 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_order: {
-        Args: {
-          p_address_neighborhood: string
-          p_address_number: string
-          p_address_reference?: string
-          p_address_street: string
-          p_change_for?: number
-          p_customer_name: string
-          p_customer_whatsapp: string
-          p_items?: Json
-          p_notes?: string
-          p_payment_method?: Database["public"]["Enums"]["payment_method"]
-          p_total?: number
-        }
-        Returns: Json
-      }
+      create_order:
+        | {
+            Args: {
+              p_address_neighborhood: string
+              p_address_number: string
+              p_address_reference?: string
+              p_address_street: string
+              p_change_for?: number
+              p_customer_name: string
+              p_customer_whatsapp: string
+              p_items?: Json
+              p_notes?: string
+              p_payment_method?: Database["public"]["Enums"]["payment_method"]
+              p_total?: number
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_address_neighborhood: string
+              p_address_number: string
+              p_address_reference?: string
+              p_address_street: string
+              p_change_for?: number
+              p_customer_name: string
+              p_customer_whatsapp: string
+              p_items?: Json
+              p_notes?: string
+              p_payment_method?: Database["public"]["Enums"]["payment_method"]
+              p_total?: number
+              p_user_id?: string
+            }
+            Returns: Json
+          }
       generate_cashback_coupon: {
         Args: { p_discount: number; p_whatsapp: string }
         Returns: string

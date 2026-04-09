@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/stores/cartStore';
 import { useStoreSettings } from '@/hooks/useStoreSettings';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCartStore();
   const { data: settings } = useStoreSettings();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('delivery');
@@ -83,6 +85,20 @@ export default function Checkout() {
     paymentMethod: 'pix' as PaymentMethod,
     changeFor: '',
   });
+
+  // Pre-fill form with profile data when logged in
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('name, whatsapp').eq('user_id', user.id).single().then(({ data }) => {
+      if (data) {
+        setForm(prev => ({
+          ...prev,
+          name: data.name || prev.name,
+          whatsapp: data.whatsapp || prev.whatsapp,
+        }));
+      }
+    });
+  }, [user]);
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
@@ -173,6 +189,7 @@ export default function Checkout() {
         p_change_for: form.paymentMethod === 'cash' && form.changeFor ? parseFloat(form.changeFor) : null,
         p_total: orderTotal,
         p_items: orderItems,
+        p_user_id: user?.id || null,
       });
 
       if (orderError) throw orderError;

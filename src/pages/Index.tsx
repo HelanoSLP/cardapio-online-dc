@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/hooks/useAuth";
 import { CategoryBar } from "@/components/menu/CategoryBar";
 import { ProductCard } from "@/components/menu/ProductCard";
 import { CartFloatingButton } from "@/components/cart/CartFloatingButton";
@@ -9,9 +11,11 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, Heart } from "lucide-react";
+import { Search, X, Heart, User } from "lucide-react";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeKey, setActiveKey] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const { data: categories, isLoading: loadingCategories } = useCategories();
@@ -178,7 +182,15 @@ const Index = () => {
             ) : (
               <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-12 object-contain" />
             )}
-            <span className="text-sm font-bold text-white flex-1">Cardápio online da DC</span>
+            <span className="text-sm font-bold text-primary-foreground flex-1">Cardápio online da DC</span>
+            {/* User account button */}
+            <button
+              onClick={() => navigate(user ? '/conta' : '/conta/login')}
+              className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              title={user ? 'Minha Conta' : 'Entrar'}
+            >
+              <User className="h-4 w-4" />
+            </button>
             {/* Open/Closed badge */}
             <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
               isOpen 
