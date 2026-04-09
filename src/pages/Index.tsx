@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/hooks/useAuth";
 import { CategoryBar } from "@/components/menu/CategoryBar";
 import { ProductCard } from "@/components/menu/ProductCard";
 import { CartFloatingButton } from "@/components/cart/CartFloatingButton";
@@ -9,9 +11,11 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, Heart } from "lucide-react";
+import { Search, X, Heart, User } from "lucide-react";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeKey, setActiveKey] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const { data: categories, isLoading: loadingCategories } = useCategories();
