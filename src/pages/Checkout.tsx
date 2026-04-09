@@ -86,6 +86,20 @@ export default function Checkout() {
     changeFor: '',
   });
 
+  // Pre-fill form with profile data when logged in
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('name, whatsapp').eq('user_id', user.id).single().then(({ data }) => {
+      if (data) {
+        setForm(prev => ({
+          ...prev,
+          name: data.name || prev.name,
+          whatsapp: data.whatsapp || prev.whatsapp,
+        }));
+      }
+    });
+  }, [user]);
+
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
