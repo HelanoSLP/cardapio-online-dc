@@ -8,6 +8,8 @@ import Checkout from "./pages/Checkout";
 import OrderConfirmed from "./pages/OrderConfirmed";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import CustomerAuth from "./pages/CustomerAuth";
+import CustomerAccount from "./pages/CustomerAccount";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
