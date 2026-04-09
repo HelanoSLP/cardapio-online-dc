@@ -175,6 +175,7 @@ export default function Checkout() {
         p_change_for: form.paymentMethod === 'cash' && form.changeFor ? parseFloat(form.changeFor) : null,
         p_total: orderTotal,
         p_items: orderItems,
+        p_user_id: user?.id || null,
       });
 
       if (orderError) throw orderError;
