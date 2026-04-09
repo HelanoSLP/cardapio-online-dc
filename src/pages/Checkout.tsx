@@ -57,6 +57,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCartStore();
   const { data: settings } = useStoreSettings();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('delivery');
