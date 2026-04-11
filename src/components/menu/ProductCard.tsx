@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Product, Category, isPizzaCategory, isComboCategory, detectPizzaSizeFromName, getPizzaCategoryIds, PIZZA_SIZES, PizzaSize } from '@/hooks/useMenu';
 import { useCartStore, ExtraIngredientItem } from '@/stores/cartStore';
-import { Plus, Minus, Check, Heart } from 'lucide-react';
+import { Plus, Minus, Check, Heart, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -34,7 +34,6 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   const pizzaPrices = (product as any).pizza_prices as Record<string, number> | null;
   const displayPrice = hasPromo ? promoPrice : product.price;
 
-  // Get the smallest pizza price for card display
   const smallestPizzaPrice = useMemo(() => {
     if (!pizzaPrices) return null;
     const prices = Object.values(pizzaPrices).filter((p) => p > 0);
@@ -111,16 +110,13 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   const showSizeSelector = isPizza || comboNeedsSizeSelection;
   const showFlavorSelector = ((isPizza || comboHasPizza) && effectiveSize && flavorProducts && flavorProducts.length > 1);
 
-  // Pre-select current product flavor when opening
   const handleOpen = () => {
     setOpen(true);
-    // For pizzas, pre-select the current product as a flavor
     if (isPizza) {
       setSelectedFlavors([product.name]);
     }
   };
 
-  // Calculate price based on selected pizza size
   const sizePrice = effectiveSize && pizzaPrices && pizzaPrices[effectiveSize]
     ? pizzaPrices[effectiveSize]
     : null;
@@ -157,6 +153,22 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
     resetAndClose();
   };
 
+  const handleQuickAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // For pizzas/combos with size selection, open dialog instead
+    if (isPizza || comboNeedsSizeSelection) {
+      handleOpen();
+      return;
+    }
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: displayPrice,
+      quantity: 1,
+    });
+    toast.success(`${product.name} adicionado ao carrinho!`);
+  };
+
   const resetAndClose = () => {
     setOpen(false);
     setAddedExtras([]);
@@ -175,7 +187,6 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   };
 
   const toggleFlavor = (name: string) => {
-    // Don't allow deselecting the original product flavor
     if (isPizza && name === product.name) return;
     
     setSelectedFlavors((prev) => {
@@ -197,46 +208,67 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
     <>
       <button
         onClick={handleOpen}
-        className="flex gap-3 rounded-xl border bg-card p-3 text-left transition-shadow hover:shadow-md relative"
+        className="group relative flex gap-3 rounded-2xl border border-border/60 bg-card p-4 text-left transition-all duration-200 hover:shadow-card-hover shadow-card"
       >
+        {/* Badges */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+          {hasPromo && (
+            <span className="bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+              🔥 Promoção
+            </span>
+          )}
+          {cashbackActive && (
+            <span className="bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+              💰 Cashback {cashbackPercent}%
+            </span>
+          )}
+        </div>
+
         {/* Favorite button */}
         {onToggleFavorite && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleFavorite(product.id); }}
-            className="absolute top-2 right-2 z-10 p-1"
+            className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-card/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
           >
-            <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'}`} />
+            <Heart className={cn('h-4 w-4 transition-colors', isFavorite ? 'fill-destructive text-destructive' : 'text-muted-foreground')} />
           </button>
         )}
-        {/* Cashback badge */}
-        {cashbackActive && (
-          <div className="absolute top-0 left-0 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-tl-xl rounded-br-xl z-10">
-            💰 Cashback {cashbackPercent}%
-          </div>
-        )}
+
+        {/* Image */}
         {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="h-20 w-20 rounded-lg object-cover shrink-0" />
+          <img src={product.image_url} alt={product.name} className="h-24 w-24 rounded-xl object-cover shrink-0" />
         ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-muted text-3xl shrink-0">🍽️</div>
+          <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-muted text-3xl shrink-0">🍽️</div>
         )}
-        <div className="flex flex-col justify-between min-w-0 flex-1">
+
+        {/* Content */}
+        <div className="flex flex-col justify-between min-w-0 flex-1 py-0.5">
           <div>
-            <h3 className="font-semibold text-card-foreground line-clamp-1">{product.name}</h3>
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{product.description}</p>
+            <h3 className="font-bold text-base text-card-foreground line-clamp-1 leading-tight">{product.name}</h3>
+            <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">{product.description}</p>
           </div>
-          <div className="flex items-center gap-2">
-            {isPizza && smallestPizzaPrice ? (
-              <p className="font-bold text-primary text-lg">
-                {formatPrice(smallestPizzaPrice)}
-              </p>
-            ) : hasPromo ? (
-              <>
-                <span className="text-sm text-muted-foreground line-through">{formatPrice(product.price)}</span>
-                <span className="font-bold text-lg text-green-600">{formatPrice(promoPrice)}</span>
-              </>
-            ) : (
-              <p className="font-bold text-primary text-lg">{formatPrice(product.price)}</p>
-            )}
+          <div className="flex items-end justify-between mt-2">
+            <div className="flex items-center gap-2">
+              {isPizza && smallestPizzaPrice ? (
+                <span className="font-extrabold text-primary text-xl leading-none">
+                  {formatPrice(smallestPizzaPrice)}
+                </span>
+              ) : hasPromo ? (
+                <>
+                  <span className="text-xs text-muted-foreground line-through">{formatPrice(product.price)}</span>
+                  <span className="font-extrabold text-xl text-accent leading-none">{formatPrice(promoPrice)}</span>
+                </>
+              ) : (
+                <span className="font-extrabold text-primary text-xl leading-none">{formatPrice(product.price)}</span>
+              )}
+            </div>
+            {/* Quick add button */}
+            <button
+              onClick={handleQuickAdd}
+              className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground shadow-md hover:scale-105 active:scale-95 transition-transform"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </button>
@@ -251,7 +283,6 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
           )}
           <p className="text-sm text-muted-foreground">{product.description}</p>
           
-          {/* Dynamic price display based on selected size */}
           {isPizza && !selectedSize ? (
             <p className="text-sm text-muted-foreground italic">Selecione um tamanho para ver o preço</p>
           ) : isPizza && selectedSize ? (
@@ -259,8 +290,8 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
               {hasPromo ? (
                 <>
                   <span className="text-base text-muted-foreground line-through">{formatPrice(sizePrice ?? product.price)}</span>
-                  <span className="font-bold text-xl text-green-600">{formatPrice(promoPrice)}</span>
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">PROMO</span>
+                  <span className="font-bold text-xl text-accent">{formatPrice(promoPrice)}</span>
+                  <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-semibold">PROMO</span>
                 </>
               ) : (
                 <p className="font-bold text-primary text-xl">{formatPrice(sizePrice ?? product.price)}</p>
@@ -269,21 +300,20 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
           ) : hasPromo ? (
             <div className="flex items-center gap-2">
               <span className="text-base text-muted-foreground line-through">{formatPrice(product.price)}</span>
-              <span className="font-bold text-xl text-green-600">{formatPrice(promoPrice)}</span>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">PROMO</span>
+              <span className="font-bold text-xl text-accent">{formatPrice(promoPrice)}</span>
+              <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full font-semibold">PROMO</span>
             </div>
           ) : (
             <p className="font-bold text-primary text-xl">{formatPrice(product.price)}</p>
           )}
 
           {cashbackActive && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
-              <p className="text-sm font-semibold text-green-700">💰 Cashback ativo: {cashbackPercent}%</p>
-              <p className="text-xs text-green-600">Ganhe {formatPrice(displayPrice * cashbackPercent / 100)} de volta!</p>
+            <div className="bg-accent/10 border border-accent/20 rounded-lg p-2 text-center">
+              <p className="text-sm font-semibold text-accent">💰 Cashback ativo: {cashbackPercent}%</p>
+              <p className="text-xs text-accent/80">Ganhe {formatPrice(displayPrice * cashbackPercent / 100)} de volta!</p>
             </div>
           )}
 
-          {/* Pizza/Combo Size Selection */}
           {showSizeSelector && (
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
@@ -302,7 +332,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                         }
                       }}
                       className={cn(
-                        'rounded-lg border p-2 text-sm font-medium transition-colors text-center',
+                        'rounded-xl border p-2 text-sm font-medium transition-colors text-center',
                         selectedSize === size.key
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'bg-card hover:bg-muted'
@@ -320,16 +350,14 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
             </div>
           )}
 
-          {/* Combo pizza info (when size is auto-detected) */}
           {comboHasPizza && !comboNeedsSizeSelection && (
-            <div className="rounded-lg bg-accent/30 p-3">
+            <div className="rounded-lg bg-accent/20 p-3">
               <p className="text-sm font-medium">
                 🍕 Pizza {PIZZA_SIZES.find((s) => s.key === comboDetectedSize)?.label} — até {maxFlavors} sabores
               </p>
             </div>
           )}
 
-          {/* Multi-flavor Selection */}
           {showFlavorSelector && (
             <div>
               <p className="text-sm font-medium mb-2">
@@ -345,7 +373,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                       onClick={() => toggleFlavor(sp.name)}
                       disabled={isOriginal}
                       className={cn(
-                        'w-full flex items-center gap-2 rounded-lg border p-2 text-sm transition-colors text-left',
+                        'w-full flex items-center gap-2 rounded-xl border p-2 text-sm transition-colors text-left',
                         isSelected ? 'bg-primary/10 border-primary' : 'hover:bg-muted',
                         isOriginal ? 'opacity-80 cursor-default' : ''
                       )}
@@ -368,7 +396,6 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
             </div>
           )}
 
-          {/* Extra ingredients */}
           {extraIngredients && extraIngredients.length > 0 && (
             <div>
               <p className="text-sm font-medium mb-2">Adicionar ingredientes:</p>
@@ -376,7 +403,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                 {extraIngredients.map((extra) => {
                   const isAdded = addedExtras.some((e) => e.name === extra.name);
                   return (
-                    <label key={extra.id} className="flex items-center justify-between gap-2 text-sm cursor-pointer rounded-lg border p-2 hover:bg-muted/50">
+                    <label key={extra.id} className="flex items-center justify-between gap-2 text-sm cursor-pointer rounded-xl border p-2 hover:bg-muted/50">
                       <div className="flex items-center gap-2">
                         <Checkbox
                           checked={isAdded}
@@ -384,7 +411,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                         />
                         <span>{extra.name}</span>
                       </div>
-                      <span className="text-xs font-medium text-green-600">+{formatPrice(extra.price)}</span>
+                      <span className="text-xs font-medium text-accent">+{formatPrice(extra.price)}</span>
                     </label>
                   );
                 })}
