@@ -227,7 +227,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
           <div className="flex items-center gap-2">
             {isPizza && smallestPizzaPrice ? (
               <p className="font-bold text-primary text-lg">
-                a partir de {formatPrice(smallestPizzaPrice)}
+                {formatPrice(smallestPizzaPrice)}
               </p>
             ) : hasPromo ? (
               <>
