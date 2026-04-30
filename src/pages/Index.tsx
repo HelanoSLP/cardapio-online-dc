@@ -206,7 +206,7 @@ const Index = () => {
         {/* Store closed banner */}
         {!isOpen && (
           <div className="bg-destructive text-destructive-foreground text-center py-3 px-4">
-            <p className="text-sm font-bold">🔴 Estamos fechados no momento</p>
+            <p className="text-sm font-bold">Estamos fechados no momento 🔴</p>
             <p className="text-xs opacity-80 mt-0.5">Confira nosso cardápio e volte quando estivermos abertos!</p>
           </div>
         )}
