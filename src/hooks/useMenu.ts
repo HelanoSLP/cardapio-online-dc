@@ -87,6 +87,7 @@ export function isComboCategory(categories: Category[] | undefined, categoryId: 
 /** Detect pizza size from product name (for combos) */
 export function detectPizzaSizeFromName(name: string): PizzaSize | null {
   const lower = name.toLowerCase();
+  if (lower.includes('brutona')) return 'brutona';
   if (lower.includes('gigante')) return 'giant';
   if (lower.includes('grande')) return 'large';
   if (lower.includes('média') || lower.includes('media')) return 'medium';
@@ -115,6 +116,7 @@ export const PIZZA_SIZES = [
   { key: 'medium', label: 'Média', maxFlavors: 3 },
   { key: 'large', label: 'Grande', maxFlavors: 4 },
   { key: 'giant', label: 'Gigante', maxFlavors: 4 },
+  { key: 'brutona', label: 'Brutona', maxFlavors: 4 },
 ] as const;
 
 export type PizzaSize = typeof PIZZA_SIZES[number]['key'];

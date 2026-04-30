@@ -31,7 +31,7 @@ export function MenuPanel() {
     name: '', description: '', price: '', category_id: '', ingredients: '', active: true, image_url: null as string | null,
     hasPromo: false, promo_price: '',
     hasCashback: false, cashback_percent: '',
-    pizza_prices: { small: '', medium: '', large: '', giant: '' } as Record<string, string>,
+    pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } as Record<string, string>,
   });
 
   // Category dialog state
@@ -132,7 +132,7 @@ export function MenuPanel() {
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '' } });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
