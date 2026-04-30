@@ -31,7 +31,7 @@ export function MenuPanel() {
     name: '', description: '', price: '', category_id: '', ingredients: '', active: true, image_url: null as string | null,
     hasPromo: false, promo_price: '',
     hasCashback: false, cashback_percent: '',
-    pizza_prices: { small: '', medium: '', large: '', giant: '' } as Record<string, string>,
+    pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } as Record<string, string>,
   });
 
   // Category dialog state
@@ -132,7 +132,7 @@ export function MenuPanel() {
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '' } });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
@@ -152,6 +152,7 @@ export function MenuPanel() {
         medium: pp?.medium ? String(pp.medium) : '',
         large: pp?.large ? String(pp.large) : '',
         giant: pp?.giant ? String(pp.giant) : '',
+        brutona: pp?.brutona ? String(pp.brutona) : '',
       },
     });
     setImageFile(null); setImagePreview(p.image_url || null);
@@ -199,6 +200,7 @@ export function MenuPanel() {
         medium: form.pizza_prices.medium ? parseFloat(form.pizza_prices.medium) : null,
         large: form.pizza_prices.large ? parseFloat(form.pizza_prices.large) : null,
         giant: form.pizza_prices.giant ? parseFloat(form.pizza_prices.giant) : null,
+        brutona: form.pizza_prices.brutona ? parseFloat(form.pizza_prices.brutona) : null,
       } : null;
       // For pizza, use smallest pizza price as the base price
       const basePrice = isCatPizza
@@ -412,6 +414,10 @@ export function MenuPanel() {
                   <div>
                     <Label className="text-xs">Gigante</Label>
                     <Input type="number" step="0.01" placeholder="Ex: 55.00" value={form.pizza_prices.giant} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, giant: e.target.value } })} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs flex items-center gap-1">💪 Brutona <span className="text-[10px] text-muted-foreground">(maior tamanho)</span></Label>
+                    <Input type="number" step="0.01" placeholder="Ex: 75.00" value={form.pizza_prices.brutona} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, brutona: e.target.value } })} />
                   </div>
                 </div>
               </div>
