@@ -11,7 +11,7 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Search, X, Heart, User, Clock, MapPin } from "lucide-react";
+import { Search, X, Heart, User, LogIn, Clock, MapPin } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -190,7 +190,7 @@ const Index = () => {
               className="p-2 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 transition-colors backdrop-blur-sm"
               title={user ? 'Minha Conta' : 'Entrar'}
             >
-              <User className="h-5 w-5" />
+              {user ? <User className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
             </button>
             {/* Open/Closed badge */}
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-sm ${
