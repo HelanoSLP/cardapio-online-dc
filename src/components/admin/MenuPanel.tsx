@@ -416,7 +416,7 @@ export function MenuPanel() {
                     <Input type="number" step="0.01" placeholder="Ex: 55.00" value={form.pizza_prices.giant} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, giant: e.target.value } })} />
                   </div>
                   <div className="col-span-2">
-                    <Label className="text-xs flex items-center gap-1">💪 Brutona <span className="text-[10px] text-muted-foreground">(maior tamanho)</span></Label>
+                    <Label className="text-xs flex items-center gap-1">💪 BRUTONA</Label>
                     <Input type="number" step="0.01" placeholder="Ex: 75.00" value={form.pizza_prices.brutona} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, brutona: e.target.value } })} />
                   </div>
                 </div>

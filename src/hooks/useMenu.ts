@@ -116,7 +116,7 @@ export const PIZZA_SIZES = [
   { key: 'medium', label: 'Média', maxFlavors: 3 },
   { key: 'large', label: 'Grande', maxFlavors: 4 },
   { key: 'giant', label: 'Gigante', maxFlavors: 4 },
-  { key: 'brutona', label: 'Brutona', maxFlavors: 4 },
+  { key: 'brutona', label: 'BRUTONA', maxFlavors: 4 },
 ] as const;
 
 export type PizzaSize = typeof PIZZA_SIZES[number]['key'];
