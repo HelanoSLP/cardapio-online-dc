@@ -1,0 +1,1 @@
+UPDATE categories SET icon = '🍕' WHERE id = '57282095-18b0-48d8-a62f-afa18f1a0d3a';
