@@ -244,7 +244,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
         {/* Content */}
         <div className="flex flex-col justify-between min-w-0 flex-1 py-0.5">
           <div>
-            <h3 className="font-bold text-base text-card-foreground line-clamp-1 leading-tight">{product.name}</h3>
+            <h3 className="font-bold text-base text-card-foreground leading-tight break-words">{product.name}</h3>
             <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">{product.description}</p>
           </div>
           <div className="flex items-end justify-between mt-2">
