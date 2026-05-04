@@ -23,6 +23,12 @@ const Index = () => {
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
   const barItems = useCategoryBarItems(categories);
 
+  useEffect(() => {
+    if (!activeKey && barItems.length > 0) {
+      setActiveKey(barItems[0].key);
+    }
+  }, [activeKey, barItems]);
+
   const activeSlugs = useMemo(() => {
     if (!activeKey) return undefined;
     const item = barItems.find((i) => i.key === activeKey);
