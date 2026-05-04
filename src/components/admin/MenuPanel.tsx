@@ -535,10 +535,10 @@ export function MenuPanel() {
                 </div>
                 <div>
                   <Label>Categoria Pai (opcional)</Label>
-                  <Select value={catForm.parent_id} onValueChange={(v) => setCatForm({ ...catForm, parent_id: v })}>
+                  <Select value={catForm.parent_id || '__none__'} onValueChange={(v) => setCatForm({ ...catForm, parent_id: v === '__none__' ? '' : v })}>
                     <SelectTrigger><SelectValue placeholder="Nenhuma (categoria principal)" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Nenhuma (categoria principal)</SelectItem>
+                      <SelectItem value="__none__">Nenhuma (categoria principal)</SelectItem>
                       {parentCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
