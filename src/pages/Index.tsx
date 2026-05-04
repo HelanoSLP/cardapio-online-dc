@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCategories, useProducts, useCategoryBarItems } from "@/hooks/useMenu";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
