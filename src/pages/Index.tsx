@@ -183,52 +183,52 @@ const Index = () => {
 
   return (
     <div className="min-h-screen pb-24 bg-background">
-      {/* Sticky top section */}
-      <div className="sticky top-0 z-40">
-        {/* Header with gradient + blurred bg */}
-        <header className="relative overflow-hidden text-white">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(var(--brand-red))]" />
-          {settings?.wallpaper_url && (
-            <img
-              src={settings.wallpaper_url}
-              alt=""
-              aria-hidden
-              className="absolute inset-0 w-full h-full object-cover opacity-25 blur-[2px] mix-blend-overlay"
-            />
+      {/* Header (scrolls with page) */}
+      <header className="relative overflow-hidden text-white">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(var(--brand-red))]" />
+        {settings?.wallpaper_url && (
+          <img
+            src={settings.wallpaper_url}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-cover opacity-25 blur-[2px] mix-blend-overlay"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3 relative z-10">
+          {settings?.logo_url ? (
+            <img src={settings.logo_url} alt={settings.store_name} className="h-12 w-12 object-contain rounded-xl bg-white/95 p-1 shadow-lg ring-1 ring-white/30" />
+          ) : (
+            <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-12 w-12 object-contain rounded-xl bg-white/95 p-1 shadow-lg ring-1 ring-white/30" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-          <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3 relative z-10">
-            {settings?.logo_url ? (
-              <img src={settings.logo_url} alt={settings.store_name} className="h-12 w-12 object-contain rounded-xl bg-white/95 p-1 shadow-lg ring-1 ring-white/30" />
-            ) : (
-              <img src="/images/logo-dc.png" alt="Delícias Caseiras" className="h-12 w-12 object-contain rounded-xl bg-white/95 p-1 shadow-lg ring-1 ring-white/30" />
-            )}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-base font-bold leading-tight drop-shadow-sm truncate">Delícias Caseiras</h1>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-white/15 backdrop-blur-sm px-2 py-0.5 rounded-full ring-1 ring-white/20">
-                  <Clock className="h-3 w-3" /> ~35 min
-                </span>
-                <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full ring-1 ${
-                  isOpen
-                    ? 'bg-emerald-500/90 text-white ring-white/20'
-                    : 'bg-destructive/90 text-white ring-white/20'
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOpen ? 'animate-pulse' : ''}`} />
-                  {isOpen ? 'ABERTO' : 'FECHADO'}
-                </span>
-              </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold leading-tight drop-shadow-sm truncate">Delícias Caseiras</h1>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-white/15 backdrop-blur-sm px-2 py-0.5 rounded-full ring-1 ring-white/20">
+                <Clock className="h-3 w-3" /> ~35 min
+              </span>
+              <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full ring-1 ${
+                isOpen
+                  ? 'bg-emerald-500/90 text-white ring-white/20'
+                  : 'bg-destructive/90 text-white ring-white/20'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full bg-white ${isOpen ? 'animate-pulse' : ''}`} />
+                {isOpen ? 'ABERTO' : 'FECHADO'}
+              </span>
             </div>
-            <button
-              onClick={() => navigate(user ? '/conta' : '/conta/login')}
-              className="p-2 rounded-full bg-white/15 hover:bg-white/25 transition-colors backdrop-blur-sm ring-1 ring-white/20"
-              title={user ? 'Minha Conta' : 'Entrar'}
-            >
-              {user ? <User className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
-            </button>
           </div>
-        </header>
+          <button
+            onClick={() => navigate(user ? '/conta' : '/conta/login')}
+            className="p-2 rounded-full bg-white/15 hover:bg-white/25 transition-colors backdrop-blur-sm ring-1 ring-white/20"
+            title={user ? 'Minha Conta' : 'Entrar'}
+          >
+            {user ? <User className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
+          </button>
+        </div>
+      </header>
 
+      {/* Sticky: closed banner + categories + search + tabs */}
+      <div className="sticky top-0 z-40">
         {/* Store closed banner */}
         {!isOpen && (
           <div className="bg-destructive text-destructive-foreground text-center py-3 px-4">
