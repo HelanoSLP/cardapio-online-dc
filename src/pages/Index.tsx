@@ -111,6 +111,8 @@ const Index = () => {
     </div>
   );
 
+  const hasPromos = promoProducts && promoProducts.length > 0;
+
   const productsContent = (
     <>
       {!searchQuery && favoriteProducts.length > 0 && !activeSlugs && (
