@@ -208,66 +208,74 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
     <>
       <button
         onClick={handleOpen}
-        className="group relative flex gap-3 rounded-2xl border border-border/60 bg-card p-4 text-left transition-all duration-200 hover:shadow-card-hover shadow-card"
+        className="group relative flex gap-4 rounded-2xl bg-card p-3 text-left ring-1 ring-border/60 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] w-full"
       >
-        {/* Badges */}
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
-          {hasPromo && (
-            <span className="bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-              🔥 Promoção
-            </span>
+        {/* Image */}
+        <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-muted">
+          {product.image_url ? (
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-3xl">🍽️</div>
           )}
-          {cashbackActive && (
-            <span className="bg-accent text-accent-foreground text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-              💰 Cashback {cashbackPercent}%
-            </span>
+          {onToggleFavorite && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(product.id); }}
+              className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-card/85 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
+            >
+              <Heart className={cn('h-3.5 w-3.5 transition-colors', isFavorite ? 'fill-destructive text-destructive' : 'text-muted-foreground')} />
+            </button>
           )}
         </div>
 
-        {/* Favorite button */}
-        {onToggleFavorite && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(product.id); }}
-            className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-card/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
-          >
-            <Heart className={cn('h-4 w-4 transition-colors', isFavorite ? 'fill-destructive text-destructive' : 'text-muted-foreground')} />
-          </button>
-        )}
-
-        {/* Image */}
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name} className="h-24 w-24 rounded-xl object-cover shrink-0" />
-        ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-muted text-3xl shrink-0">🍽️</div>
-        )}
-
-        {/* Content */}
-        <div className="flex flex-col justify-between min-w-0 flex-1 py-0.5">
-          <div>
-            <h3 className="font-bold text-base text-card-foreground leading-tight break-words">{product.name}</h3>
-            <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">{product.description}</p>
+        <div className="flex flex-col flex-1 min-w-0 py-1">
+          <div className="flex flex-wrap gap-1.5 mb-1.5">
+            {hasPromo && (
+              <span className="text-[10px] font-bold uppercase tracking-wide bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
+                Promoção
+              </span>
+            )}
+            {cashbackActive && (
+              <span className="text-[10px] font-bold uppercase tracking-wide bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+                💰 {cashbackPercent}%
+              </span>
+            )}
           </div>
-          <div className="flex items-end justify-between mt-2">
-            <div className="flex items-center gap-2">
+
+          <h3 className="font-semibold text-base text-card-foreground leading-snug break-words">
+            {product.name}
+          </h3>
+          <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+            {product.description}
+          </p>
+
+          <div className="mt-auto flex items-end justify-between pt-2 gap-2">
+            <div className="flex flex-col">
               {isPizza && smallestPizzaPrice ? (
-                <span className="font-extrabold text-primary text-xl leading-none">
-                  {formatPrice(smallestPizzaPrice)}
-                </span>
+                <>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">A partir de</span>
+                  <span className="font-extrabold text-primary text-xl leading-none">
+                    {formatPrice(smallestPizzaPrice)}
+                  </span>
+                </>
               ) : hasPromo ? (
                 <>
-                  <span className="text-xs text-muted-foreground line-through">{formatPrice(product.price)}</span>
-                  <span className="font-extrabold text-xl text-accent leading-none">{formatPrice(promoPrice)}</span>
+                  <span className="text-[11px] text-muted-foreground line-through">{formatPrice(product.price)}</span>
+                  <span className="font-extrabold text-xl text-primary leading-none">{formatPrice(promoPrice)}</span>
                 </>
               ) : (
                 <span className="font-extrabold text-primary text-xl leading-none">{formatPrice(product.price)}</span>
               )}
             </div>
-            {/* Quick add button */}
             <button
               onClick={handleQuickAdd}
-              className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-primary-foreground shadow-md hover:scale-105 active:scale-95 transition-transform"
+              className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground px-3.5 py-2 rounded-xl text-sm font-bold shadow-md shadow-primary/20 hover:scale-[1.04] active:scale-95 transition-transform shrink-0"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" />
+              <span>Adicionar</span>
             </button>
           </div>
         </div>

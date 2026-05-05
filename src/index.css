@@ -6,8 +6,10 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%;
+    --background: 38 30% 96%;
     --foreground: 20 18% 15%;
+    --brand-red: 0 75% 47%;
+    --gradient-warm: linear-gradient(135deg, hsl(22 100% 50%), hsl(0 75% 47%));
 
     --card: 0 0% 100%;
     --card-foreground: 20 18% 15%;
