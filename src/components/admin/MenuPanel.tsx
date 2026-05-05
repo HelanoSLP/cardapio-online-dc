@@ -43,8 +43,8 @@ export function MenuPanel() {
 
   const fetchData = async () => {
     const [{ data: cats }, { data: prods }] = await Promise.all([
-      supabase.from('categories').select('*').order('sort_order'),
-      supabase.from('products').select('*').order('sort_order'),
+      supabase.from('categories').select('*').order('sort_order').order('created_at'),
+      supabase.from('products').select('*').order('sort_order').order('created_at'),
     ]);
     if (cats) setCategories(cats as Category[]);
     if (prods) setProducts(prods as Product[]);
