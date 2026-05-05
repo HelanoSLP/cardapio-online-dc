@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import { useTopProducts, useProductRatings } from '@/hooks/useProductStats';
 
 interface ProductCardProps {
   product: Product;
@@ -26,6 +27,10 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   const [selectedSize, setSelectedSize] = useState<PizzaSize | null>(null);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const addItem = useCartStore((s) => s.addItem);
+  const { data: topProducts } = useTopProducts(8);
+  const { data: ratings } = useProductRatings();
+  const isTopSeller = topProducts?.has(product.id) ?? false;
+  const ratingInfo = ratings?.get(product.id);
 
   const promoPrice = (product as any).promo_price as number | null;
   const hasPromo = promoPrice != null && promoPrice > 0;
@@ -221,10 +226,11 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
           ) : (
             <div className="flex h-full w-full items-center justify-center text-3xl">🍽️</div>
           )}
-          {/* Rating badge */}
-          <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-0.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-            ⭐ 4.8
-          </span>
+          {ratingInfo && ratingInfo.reviews_count > 0 && (
+            <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-0.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+              ⭐ {ratingInfo.avg_rating} <span className="opacity-70 font-normal">({ratingInfo.reviews_count})</span>
+            </span>
+          )}
           {hasPromo && (
             <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[10px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-md shadow-sm">
               Promo
@@ -247,7 +253,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                 💰 {cashbackPercent}% cashback
               </span>
             )}
-            {(hasPromo || cashbackActive) && (
+            {isTopSeller && (
               <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                 🔥 Mais pedido
               </span>

@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, LogOut, User, Gift, Clock, Heart, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, LogOut, User, Gift, Clock, Heart, Save, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { ReviewDialog } from '@/components/menu/ReviewDialog';
 
 const statusLabels: Record<string, string> = {
   received: '📥 Recebido',
@@ -74,6 +75,22 @@ export default function CustomerAccount() {
     enabled: !!user,
   });
 
+  // My reviews (so we can show "edit" or "rate")
+  const { data: myReviews } = useQuery({
+    queryKey: ['my-reviews', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('product_reviews' as any)
+        .select('product_id, order_id, rating, comment')
+        .eq('user_id', user!.id);
+      const map = new Map<string, { rating: number; comment: string | null }>();
+      (data || []).forEach((r: any) => map.set(`${r.order_id}:${r.product_id}`, { rating: r.rating, comment: r.comment }));
+      return map;
+    },
+    enabled: !!user,
+  });
+
+  const [reviewTarget, setReviewTarget] = useState<{ orderId: string; productId: string; productName: string } | null>(null);
   // Coupons via WhatsApp
   const { data: coupons, isLoading: loadingCoupons } = useQuery({
     queryKey: ['my-coupons', profileForm.whatsapp],
@@ -195,13 +212,29 @@ export default function CustomerAccount() {
                   <div className="text-xs text-muted-foreground">
                     {new Date(order.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div className="text-sm text-foreground space-y-1">
-                    {order.order_items?.map((item: any) => (
-                      <div key={item.id} className="flex justify-between">
-                        <span>{item.quantity}x {item.product_name}</span>
-                        <span>{formatPrice(item.unit_price * item.quantity)}</span>
-                      </div>
-                    ))}
+                  <div className="text-sm text-foreground space-y-2">
+                    {order.order_items?.map((item: any) => {
+                      const reviewKey = `${order.id}:${item.product_id}`;
+                      const existing = myReviews?.get(reviewKey);
+                      const canReview = order.status === 'delivered' && !!item.product_id;
+                      return (
+                        <div key={item.id} className="space-y-1">
+                          <div className="flex justify-between gap-2">
+                            <span className="flex-1">{item.quantity}x {item.product_name}</span>
+                            <span>{formatPrice(item.unit_price * item.quantity)}</span>
+                          </div>
+                          {canReview && (
+                            <button
+                              onClick={() => setReviewTarget({ orderId: order.id, productId: item.product_id, productName: item.product_name })}
+                              className="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+                            >
+                              <Star className="h-3 w-3" />
+                              {existing ? `Sua nota: ${existing.rating}★ (editar)` : 'Avaliar produto'}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="border-t pt-2 flex justify-between font-bold text-foreground">
                     <span>Total</span>
@@ -263,6 +296,19 @@ export default function CustomerAccount() {
           </div>
         )}
       </div>
+
+      {reviewTarget && user && (
+        <ReviewDialog
+          open={!!reviewTarget}
+          onOpenChange={(v) => { if (!v) setReviewTarget(null); }}
+          productId={reviewTarget.productId}
+          productName={reviewTarget.productName}
+          orderId={reviewTarget.orderId}
+          userId={user.id}
+          existingRating={myReviews?.get(`${reviewTarget.orderId}:${reviewTarget.productId}`)?.rating}
+          existingComment={myReviews?.get(`${reviewTarget.orderId}:${reviewTarget.productId}`)?.comment ?? undefined}
+        />
+      )}
     </div>
   );
 }
