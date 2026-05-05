@@ -208,10 +208,10 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
     <>
       <button
         onClick={handleOpen}
-        className="group relative flex gap-4 rounded-2xl bg-card p-3 text-left ring-1 ring-border/60 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] w-full"
+        className="group relative flex gap-4 rounded-2xl bg-card p-3 text-left ring-1 ring-border/60 shadow-sm transition-all duration-300 hover:shadow-xl hover:ring-primary/30 hover:-translate-y-1 active:scale-[0.99] w-full"
       >
         {/* Image */}
-        <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl bg-muted">
+        <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl bg-muted">
           {product.image_url ? (
             <img
               src={product.image_url}
@@ -221,26 +221,35 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
           ) : (
             <div className="flex h-full w-full items-center justify-center text-3xl">🍽️</div>
           )}
+          {/* Rating badge */}
+          <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-0.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+            ⭐ 4.8
+          </span>
+          {hasPromo && (
+            <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[10px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-md shadow-sm">
+              Promo
+            </span>
+          )}
           {onToggleFavorite && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggleFavorite(product.id); }}
-              className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-card/85 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
+              className="absolute top-1.5 right-1.5 p-1.5 rounded-full bg-card/90 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
             >
               <Heart className={cn('h-3.5 w-3.5 transition-colors', isFavorite ? 'fill-destructive text-destructive' : 'text-muted-foreground')} />
             </button>
           )}
         </div>
 
-        <div className="flex flex-col flex-1 min-w-0 py-1">
+        <div className="flex flex-col flex-1 min-w-0 py-0.5">
           <div className="flex flex-wrap gap-1.5 mb-1.5">
-            {hasPromo && (
-              <span className="text-[10px] font-bold uppercase tracking-wide bg-destructive/10 text-destructive px-2 py-0.5 rounded-full">
-                Promoção
-              </span>
-            )}
             {cashbackActive && (
               <span className="text-[10px] font-bold uppercase tracking-wide bg-accent/10 text-accent px-2 py-0.5 rounded-full">
-                💰 {cashbackPercent}%
+                💰 {cashbackPercent}% cashback
+              </span>
+            )}
+            {(hasPromo || cashbackActive) && (
+              <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                🔥 Mais pedido
               </span>
             )}
           </div>
