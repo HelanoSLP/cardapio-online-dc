@@ -226,10 +226,11 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
           ) : (
             <div className="flex h-full w-full items-center justify-center text-3xl">🍽️</div>
           )}
-          {/* Rating badge */}
-          <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-0.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
-            ⭐ 4.8
-          </span>
+          {ratingInfo && ratingInfo.reviews_count > 0 && (
+            <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-0.5 bg-black/65 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+              ⭐ {ratingInfo.avg_rating} <span className="opacity-70 font-normal">({ratingInfo.reviews_count})</span>
+            </span>
+          )}
           {hasPromo && (
             <span className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[10px] font-extrabold uppercase tracking-wide px-1.5 py-0.5 rounded-md shadow-sm">
               Promo
