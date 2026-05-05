@@ -27,6 +27,10 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   const [selectedSize, setSelectedSize] = useState<PizzaSize | null>(null);
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const addItem = useCartStore((s) => s.addItem);
+  const { data: topProducts } = useTopProducts(8);
+  const { data: ratings } = useProductRatings();
+  const isTopSeller = topProducts?.has(product.id) ?? false;
+  const ratingInfo = ratings?.get(product.id);
 
   const promoPrice = (product as any).promo_price as number | null;
   const hasPromo = promoPrice != null && promoPrice > 0;
