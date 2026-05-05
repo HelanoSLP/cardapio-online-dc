@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+type Category = 'pizza' | 'snack';
 
 interface ExtraIngredient {
   id: string;
@@ -14,10 +17,12 @@ interface ExtraIngredient {
   price: number;
   active: boolean;
   sort_order: number;
+  category: Category;
 }
 
 export function ExtraIngredientsPanel() {
   const [items, setItems] = useState<ExtraIngredient[]>([]);
+  const [tab, setTab] = useState<Category>('pizza');
   const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<ExtraIngredient | null>(null);
   const [form, setForm] = useState({ name: '', price: '', active: true });
@@ -31,6 +36,8 @@ export function ExtraIngredientsPanel() {
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+
+  const filtered = items.filter((i) => i.category === tab);
 
   const openNew = () => {
     setEditing(null);
@@ -54,22 +61,23 @@ export function ExtraIngredientsPanel() {
     if (editing) {
       const { error } = await supabase.from('extra_ingredients').update(data).eq('id', editing.id);
       if (error) { toast.error('Erro ao atualizar'); return; }
-      toast.success('Ingrediente atualizado');
+      toast.success('Adicional atualizado');
     } else {
-      data.sort_order = items.length;
+      data.sort_order = filtered.length;
+      data.category = tab;
       const { error } = await supabase.from('extra_ingredients').insert(data);
       if (error) { toast.error('Erro ao criar'); return; }
-      toast.success('Ingrediente criado');
+      toast.success('Adicional criado');
     }
     setDialog(false);
     fetchData();
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Excluir este ingrediente?')) return;
+    if (!confirm('Excluir este adicional?')) return;
     const { error } = await supabase.from('extra_ingredients').delete().eq('id', id);
     if (error) { toast.error('Erro ao excluir'); return; }
-    toast.success('Ingrediente excluído');
+    toast.success('Adicional excluído');
     fetchData();
   };
 
@@ -78,35 +86,49 @@ export function ExtraIngredientsPanel() {
     fetchData();
   };
 
+  const renderList = () => (
+    <div className="space-y-2">
+      {filtered.map((item) => (
+        <div key={item.id} className={`flex items-center gap-3 rounded-lg border p-3 ${!item.active ? 'opacity-50' : ''}`}>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm">{item.name}</p>
+            <p className="text-xs text-muted-foreground">{formatPrice(item.price)}</p>
+          </div>
+          <Switch checked={item.active} onCheckedChange={() => toggleActive(item)} />
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+      {filtered.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum adicional cadastrado</p>}
+    </div>
+  );
+
   return (
     <div>
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-bold">Ingredientes Adicionais ({items.length})</h2>
+        <h2 className="text-lg font-bold">Adicionais</h2>
         <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Novo</Button>
       </div>
-      <div className="space-y-2">
-        {items.map((item) => (
-          <div key={item.id} className={`flex items-center gap-3 rounded-lg border p-3 ${!item.active ? 'opacity-50' : ''}`}>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">{item.name}</p>
-              <p className="text-xs text-muted-foreground">{formatPrice(item.price)}</p>
-            </div>
-            <Switch checked={item.active} onCheckedChange={() => toggleActive(item)} />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}>
-              <Pencil className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        ))}
-        {items.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum ingrediente adicional cadastrado</p>}
-      </div>
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Category)}>
+        <TabsList className="grid w-full grid-cols-2 mb-3">
+          <TabsTrigger value="pizza">🍕 Pizzas ({items.filter((i) => i.category === 'pizza').length})</TabsTrigger>
+          <TabsTrigger value="snack">🍔 Lanches ({items.filter((i) => i.category === 'snack').length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="pizza">{renderList()}</TabsContent>
+        <TabsContent value="snack">{renderList()}</TabsContent>
+      </Tabs>
 
       <Dialog open={dialog} onOpenChange={setDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Editar Ingrediente' : 'Novo Ingrediente'}</DialogTitle>
+            <DialogTitle>
+              {editing ? 'Editar Adicional' : `Novo Adicional - ${tab === 'pizza' ? 'Pizzas' : 'Lanches'}`}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
