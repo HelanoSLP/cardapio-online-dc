@@ -296,6 +296,19 @@ export default function CustomerAccount() {
           </div>
         )}
       </div>
+
+      {reviewTarget && user && (
+        <ReviewDialog
+          open={!!reviewTarget}
+          onOpenChange={(v) => { if (!v) setReviewTarget(null); }}
+          productId={reviewTarget.productId}
+          productName={reviewTarget.productName}
+          orderId={reviewTarget.orderId}
+          userId={user.id}
+          existingRating={myReviews?.get(`${reviewTarget.orderId}:${reviewTarget.productId}`)?.rating}
+          existingComment={myReviews?.get(`${reviewTarget.orderId}:${reviewTarget.productId}`)?.comment ?? undefined}
+        />
+      )}
     </div>
   );
 }
