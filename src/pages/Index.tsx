@@ -274,7 +274,7 @@ const Index = () => {
         </div>
 
         {/* Mobile tabs */}
-        <div className="landscape:hidden lg:hidden flex border-b bg-card">
+        <div className="lg:hidden flex border-b bg-card">
           <button
             onClick={() => setMobileTab("menu")}
             className={`flex-1 py-3 text-sm font-semibold text-center transition-colors ${
@@ -294,8 +294,8 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Desktop/Landscape: 2-col */}
-      <div className="hidden landscape:flex lg:flex mx-auto max-w-5xl px-4 py-6 gap-6">
+      {/* Desktop: 2-col */}
+      <div className="hidden lg:flex mx-auto max-w-5xl px-4 py-6 gap-6">
         <main className="flex-1 min-w-0">{productsContent}</main>
         <aside className="w-72 shrink-0">
           <h2 className="text-lg font-bold text-foreground mb-4">🔥 Promoções</h2>
@@ -303,8 +303,8 @@ const Index = () => {
         </aside>
       </div>
 
-      {/* Mobile Portrait */}
-      <div className="landscape:hidden lg:hidden">
+      {/* Mobile (portrait & landscape) */}
+      <div className="lg:hidden">
         <main className="mx-auto max-w-lg px-4 py-5">
           {mobileTab === "menu" ? productsContent : promoContent}
         </main>
