@@ -146,7 +146,7 @@ const Index = () => {
       ) : (
         <>
           {loadingProducts ? (
-            <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((i) => (
                 <Skeleton key={i} className="h-32 rounded-2xl" />
               ))}
@@ -156,7 +156,7 @@ const Index = () => {
               {groupedProducts.map(([catName, items]) => (
                 <div key={catName}>
                   <h2 className="text-lg font-bold text-foreground mb-4">{catName}</h2>
-                  <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {items.map((product) => (
                       <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
                     ))}
@@ -165,7 +165,7 @@ const Index = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {products?.map((product) => (
                 <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
               ))}
