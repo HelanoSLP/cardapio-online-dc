@@ -481,6 +481,13 @@ export type Database = {
         Args: { p_discount: number; p_whatsapp: string }
         Returns: string
       }
+      get_top_products: {
+        Args: { p_limit?: number }
+        Returns: {
+          product_id: string
+          total_qty: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
