@@ -99,13 +99,15 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
     enabled: (isPizza || comboHasPizza) && open,
   });
 
+  const extrasCategory = (isPizza || comboHasPizza) ? 'pizza' : 'snack';
   const { data: extraIngredients } = useQuery({
-    queryKey: ['extra-ingredients'],
+    queryKey: ['extra-ingredients', extrasCategory],
     queryFn: async () => {
       const { data } = await supabase
         .from('extra_ingredients')
         .select('*')
         .eq('active', true)
+        .eq('category', extrasCategory)
         .order('sort_order');
       return (data || []) as { id: string; name: string; price: number }[];
     },
