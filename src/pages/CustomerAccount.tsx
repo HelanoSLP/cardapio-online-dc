@@ -212,13 +212,29 @@ export default function CustomerAccount() {
                   <div className="text-xs text-muted-foreground">
                     {new Date(order.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div className="text-sm text-foreground space-y-1">
-                    {order.order_items?.map((item: any) => (
-                      <div key={item.id} className="flex justify-between">
-                        <span>{item.quantity}x {item.product_name}</span>
-                        <span>{formatPrice(item.unit_price * item.quantity)}</span>
-                      </div>
-                    ))}
+                  <div className="text-sm text-foreground space-y-2">
+                    {order.order_items?.map((item: any) => {
+                      const reviewKey = `${order.id}:${item.product_id}`;
+                      const existing = myReviews?.get(reviewKey);
+                      const canReview = order.status === 'delivered' && !!item.product_id;
+                      return (
+                        <div key={item.id} className="space-y-1">
+                          <div className="flex justify-between gap-2">
+                            <span className="flex-1">{item.quantity}x {item.product_name}</span>
+                            <span>{formatPrice(item.unit_price * item.quantity)}</span>
+                          </div>
+                          {canReview && (
+                            <button
+                              onClick={() => setReviewTarget({ orderId: order.id, productId: item.product_id, productName: item.product_name })}
+                              className="inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline"
+                            >
+                              <Star className="h-3 w-3" />
+                              {existing ? `Sua nota: ${existing.rating}★ (editar)` : 'Avaliar produto'}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="border-t pt-2 flex justify-between font-bold text-foreground">
                     <span>Total</span>
