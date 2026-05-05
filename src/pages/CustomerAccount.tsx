@@ -75,6 +75,22 @@ export default function CustomerAccount() {
     enabled: !!user,
   });
 
+  // My reviews (so we can show "edit" or "rate")
+  const { data: myReviews } = useQuery({
+    queryKey: ['my-reviews', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('product_reviews' as any)
+        .select('product_id, order_id, rating, comment')
+        .eq('user_id', user!.id);
+      const map = new Map<string, { rating: number; comment: string | null }>();
+      (data || []).forEach((r: any) => map.set(`${r.order_id}:${r.product_id}`, { rating: r.rating, comment: r.comment }));
+      return map;
+    },
+    enabled: !!user,
+  });
+
+  const [reviewTarget, setReviewTarget] = useState<{ orderId: string; productId: string; productName: string } | null>(null);
   // Coupons via WhatsApp
   const { data: coupons, isLoading: loadingCoupons } = useQuery({
     queryKey: ['my-coupons', profileForm.whatsapp],
