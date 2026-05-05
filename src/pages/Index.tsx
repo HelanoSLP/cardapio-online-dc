@@ -94,7 +94,7 @@ const Index = () => {
 
   const promoContent =
     promoProducts && promoProducts.length > 0 ? (
-      <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {promoProducts.map((product: any) => (
           <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
         ))}
@@ -104,7 +104,7 @@ const Index = () => {
     );
 
   const renderProductGrid = (items: any[]) => (
-    <div className="grid grid-cols-1 landscape:grid-cols-2 lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {items.map((product: any) => (
         <ProductCard key={product.id} product={product} categories={categories} isFavorite={isFavorite(product.id)} onToggleFavorite={toggleFavorite} />
       ))}
