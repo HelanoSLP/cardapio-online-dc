@@ -115,6 +115,15 @@ const Index = () => {
 
   const productsContent = (
     <>
+      {!searchQuery && hasPromos && (
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-primary to-[hsl(var(--brand-red))] text-white px-4 py-3 shadow-md flex items-center gap-3">
+          <span className="text-2xl">🔥</span>
+          <div className="flex-1">
+            <p className="font-extrabold text-sm leading-tight">Promoção do dia</p>
+            <p className="text-[11px] opacity-90">Ofertas especiais com até -10% e combos imperdíveis</p>
+          </div>
+        </div>
+      )}
       {!searchQuery && favoriteProducts.length > 0 && !activeSlugs && (
         <div className="mb-8">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
