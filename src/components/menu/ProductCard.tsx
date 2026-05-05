@@ -253,7 +253,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                 💰 {cashbackPercent}% cashback
               </span>
             )}
-            {(hasPromo || cashbackActive) && (
+            {isTopSeller && (
               <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                 🔥 Mais pedido
               </span>
