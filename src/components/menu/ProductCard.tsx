@@ -265,7 +265,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
           <h3 className="font-semibold text-base text-card-foreground leading-snug break-words">
             {product.name}
           </h3>
-          <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed break-words">
             {product.ingredients && product.ingredients.length > 0
               ? product.ingredients.join(', ')
               : product.description}
