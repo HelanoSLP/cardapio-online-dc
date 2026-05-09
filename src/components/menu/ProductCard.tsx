@@ -266,7 +266,9 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
             {product.name}
           </h3>
           <p className="text-xs text-muted-foreground line-clamp-2 mt-1 leading-relaxed">
-            {product.description}
+            {product.ingredients && product.ingredients.length > 0
+              ? product.ingredients.join(', ')
+              : product.description}
           </p>
 
           <div className="mt-auto flex items-end justify-between pt-2 gap-2">
