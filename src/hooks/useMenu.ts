@@ -137,7 +137,18 @@ export function useProducts(categorySlugs?: string[]) {
       
       const { data, error } = await query;
       if (error) throw error;
-      return data as (Product & { categories: { slug: string; name: string; sort_order: number } })[];
+
+      const products = data as (Product & { categories: { slug: string; name: string; sort_order: number } })[];
+
+      // Produtos em promoção primeiro, depois por sort_order
+      products.sort((a, b) => {
+        const aPromo = a.promo_price != null ? 1 : 0;
+        const bPromo = b.promo_price != null ? 1 : 0;
+        if (aPromo !== bPromo) return bPromo - aPromo;
+        return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+
+      return products;
     },
   });
 }
