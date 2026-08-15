@@ -441,11 +441,41 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_welcome_state: {
+        Row: {
+          created_at: string
+          last_delivered_order_id: string | null
+          phone_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          last_delivered_order_id?: string | null
+          phone_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          last_delivered_order_id?: string | null
+          phone_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_welcome_state_last_delivered_order_id_fkey"
+            columns: ["last_delivered_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      claim_whatsapp_welcome: { Args: { p_phone: string }; Returns: boolean }
       create_order:
         | {
             Args: {
