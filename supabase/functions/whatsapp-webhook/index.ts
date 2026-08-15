@@ -1,9 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,10 +9,12 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
 
-    const phone = body?.phone;
-    const isFromMe = body?.fromMe;
+    const phone = typeof body?.phone === 'string' || typeof body?.phone === 'number'
+      ? String(body.phone)
+      : '';
+    const isFromMe = body?.fromMe === true;
 
-    if (!phone || isFromMe) {
+    if (!phone || phone.length > 30 || isFromMe) {
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -26,46 +24,46 @@ Deno.serve(async (req) => {
     const ZAPI_INSTANCE_ID = Deno.env.get('ZAPI_INSTANCE_ID');
     const ZAPI_TOKEN = Deno.env.get('ZAPI_TOKEN');
     const ZAPI_CLIENT_TOKEN = Deno.env.get('ZAPI_CLIENT_TOKEN');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN) {
-      console.error('Z-API credentials not configured');
+    if (!ZAPI_INSTANCE_ID || !ZAPI_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error('Webhook credentials not configured');
       return new Response(JSON.stringify({ ok: false }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Check if customer has an active (not delivered/cancelled) order.
-    // If yes -> do NOT reply. Only welcome again after the last order is delivered/cancelled.
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     const digits = String(phone).replace(/\D/g, '');
-    // Match by last 10 digits to handle 55 prefix variations
-    const tail = digits.slice(-10);
 
-    const { data: recentOrders } = await supabase
-      .from('orders')
-      .select('status, customer_whatsapp, created_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
+    if (digits.length < 10 || digits.length > 15) {
+      return new Response(JSON.stringify({ ok: true, skipped: 'invalid_phone' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    const customerOrders = (recentOrders ?? []).filter((o: any) => {
-      const od = String(o.customer_whatsapp ?? '').replace(/\D/g, '');
-      return od.endsWith(tail);
-    });
+    // Atomically claim the single welcome allowed for this customer/order cycle.
+    const { data: shouldReply, error: claimError } = await supabase.rpc(
+      'claim_whatsapp_welcome',
+      { p_phone: digits },
+    );
 
-    if (customerOrders.length > 0) {
-      const lastStatus = String(customerOrders[0].status);
-      const finished = lastStatus === 'delivered' || lastStatus === 'cancelled';
-      if (!finished) {
-        // Order in progress — bot stays silent
-        return new Response(JSON.stringify({ ok: true, skipped: 'order_in_progress' }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+    if (claimError) {
+      console.error('Could not claim WhatsApp welcome:', claimError.message);
+      return new Response(JSON.stringify({ ok: false }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!shouldReply) {
+      return new Response(JSON.stringify({ ok: true, skipped: 'already_welcomed' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const siteUrl = 'https://cardapio-online-dc.lovable.app';
@@ -92,7 +90,7 @@ Deno.serve(async (req) => {
       headers['Client-Token'] = ZAPI_CLIENT_TOKEN;
     }
 
-    await fetch(zapiUrl, {
+    const zapiResponse = await fetch(zapiUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -100,6 +98,10 @@ Deno.serve(async (req) => {
         message: welcomeMessage,
       }),
     });
+
+    if (!zapiResponse.ok) {
+      console.error('Z-API welcome failed with status:', zapiResponse.status);
+    }
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
