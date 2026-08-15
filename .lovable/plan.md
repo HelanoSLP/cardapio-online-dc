@@ -1,26 +1,15 @@
+# Resposta automática uma vez por ciclo de pedido
 
-## Melhorias a implementar
+## Objetivo
+Fazer o WhatsApp responder na primeira mensagem de cada cliente e permanecer em silêncio nas mensagens seguintes. Uma nova resposta será liberada somente depois que um novo pedido daquele número for marcado como **Entregue** no painel.
 
-### 1. 🔍 Busca de produtos no cardápio
-- Campo de pesquisa fixo abaixo da barra de categorias
-- Filtra produtos pelo nome em tempo real
-- Ícone de lupa e botão para limpar
+## Implementação
+- Criar um registro interno por número de WhatsApp para guardar até qual pedido entregue a saudação já foi enviada.
+- Adicionar uma função atômica no banco que decide se a mensagem pode ser enviada, evitando respostas duplicadas quando o webhook recebe eventos repetidos.
+- Atualizar o webhook para consultar essa função antes de enviar a saudação e o link do cardápio.
+- Validar estes cenários: primeiro contato responde; mensagens repetidas ficam sem resposta; pedido em andamento não libera; após marcar como entregue, a próxima mensagem responde uma vez.
 
-### 2. ⏱️ Tempo estimado de entrega
-- Nova configuração no painel admin (ex: "30-50 min")
-- Exibido na página de confirmação do pedido
-- Salvo na tabela `store_settings`
-
-### 3. 🔔 Notificação sonora no painel admin
-- Som de alerta quando um novo pedido chega via Realtime
-- Botão para ativar/desativar o som
-- Usa a Web Audio API
-
-### 4. ⭐ Favoritos
-- Botão de coração nos cards de produto
-- Salvo no localStorage do navegador
-- Seção "Favoritos" no topo do cardápio (quando houver)
-
-### 5. 🕐 Horário de funcionamento no cabeçalho
-- Badge "Aberto" ou "Fechado" visível no cabeçalho do cardápio
-- Usa o status existente da store_settings (store_open)
+## Detalhes técnicos
+- O número será normalizado apenas com dígitos e comparado pelas terminações para aceitar variações com ou sem o código `55`.
+- A tabela será privada, com acesso apenas da função de backend, RLS habilitado e sem exposição ao cliente.
+- O envio continuará ignorando mensagens enviadas pelo próprio WhatsApp da loja.
