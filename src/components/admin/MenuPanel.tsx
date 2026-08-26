@@ -196,13 +196,26 @@ export function MenuPanel() {
     }
     setUploading(true);
     try {
-      const pizzaPricesData = isCatPizza ? {
-        small: form.pizza_prices.small ? parseFloat(form.pizza_prices.small) : null,
-        medium: form.pizza_prices.medium ? parseFloat(form.pizza_prices.medium) : null,
-        large: form.pizza_prices.large ? parseFloat(form.pizza_prices.large) : null,
-        giant: form.pizza_prices.giant ? parseFloat(form.pizza_prices.giant) : null,
-        brutona: form.pizza_prices.brutona ? parseFloat(form.pizza_prices.brutona) : null,
-      } : null;
+      const pizzaPricesData = isCatPizza
+        ? Object.fromEntries(
+            PIZZA_SIZES.map((s) => [
+              s.key,
+              form.pizza_prices[s.key] && parseFloat(form.pizza_prices[s.key]) > 0
+                ? parseFloat(form.pizza_prices[s.key])
+                : null,
+            ])
+          )
+        : null;
+      const pizzaMaxFlavorsData = isCatPizza
+        ? Object.fromEntries(
+            PIZZA_SIZES.map((s) => [
+              s.key,
+              form.pizza_prices[s.key] && parseFloat(form.pizza_prices[s.key]) > 0
+                ? (form.pizza_max_flavors[s.key] ? parseInt(form.pizza_max_flavors[s.key]) : s.maxFlavors)
+                : null,
+            ])
+          )
+        : null;
       // For pizza, use smallest pizza price as the base price
       const basePrice = isCatPizza
         ? Math.min(...Object.values(form.pizza_prices).filter(v => v && parseFloat(v) > 0).map(v => parseFloat(v)))
@@ -216,6 +229,7 @@ export function MenuPanel() {
         cashback_active: form.hasCashback,
         cashback_percent: form.hasCashback && form.cashback_percent ? parseFloat(form.cashback_percent) : 0,
         pizza_prices: pizzaPricesData,
+        pizza_max_flavors: pizzaMaxFlavorsData,
       };
       if (editingProduct) {
         data.image_url = await uploadImage(editingProduct.id);
