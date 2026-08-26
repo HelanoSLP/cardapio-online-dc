@@ -80,7 +80,9 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
       : comboDetectedSize;
 
   const maxFlavors = effectiveSize
-    ? PIZZA_SIZES.find((s) => s.key === effectiveSize)?.maxFlavors || 1
+    ? (pizzaMaxFlavors?.[effectiveSize] ??
+        PIZZA_SIZES.find((s) => s.key === effectiveSize)?.maxFlavors ??
+        1)
     : 1;
 
   const pizzaCategoryIds = useMemo(
