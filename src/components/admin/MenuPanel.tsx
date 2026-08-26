@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExtraIngredientsPanel } from './ExtraIngredientsPanel';
+import { PIZZA_SIZES } from '@/hooks/useMenu';
 
 type Category = Tables<'categories'> & { parent_id?: string | null };
 type Product = Tables<'products'> & { cashback_active?: boolean; cashback_percent?: number };
@@ -32,6 +33,7 @@ export function MenuPanel() {
     hasPromo: false, promo_price: '',
     hasCashback: false, cashback_percent: '',
     pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } as Record<string, string>,
+    pizza_max_flavors: { small: '', medium: '', large: '', giant: '', brutona: '' } as Record<string, string>,
   });
 
   // Category dialog state
@@ -132,7 +134,7 @@ export function MenuPanel() {
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' }, pizza_max_flavors: { small: '', medium: '', large: '', giant: '', brutona: '' } });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
@@ -141,19 +143,19 @@ export function MenuPanel() {
     setEditingProduct(p);
     const promoPrice = (p as any).promo_price;
     const pp = (p as any).pizza_prices as Record<string, number> | null;
+    const pmf = (p as any).pizza_max_flavors as Record<string, number> | null;
     setForm({
       name: p.name, description: p.description || '', price: String(p.price),
       category_id: p.category_id, ingredients: p.ingredients?.join(', ') || '', active: p.active, image_url: p.image_url,
       hasPromo: promoPrice != null && promoPrice > 0, promo_price: promoPrice ? String(promoPrice) : '',
       hasCashback: (p as any).cashback_active ?? false,
       cashback_percent: (p as any).cashback_percent ? String((p as any).cashback_percent) : '',
-      pizza_prices: {
-        small: pp?.small ? String(pp.small) : '',
-        medium: pp?.medium ? String(pp.medium) : '',
-        large: pp?.large ? String(pp.large) : '',
-        giant: pp?.giant ? String(pp.giant) : '',
-        brutona: pp?.brutona ? String(pp.brutona) : '',
-      },
+      pizza_prices: Object.fromEntries(
+        PIZZA_SIZES.map((s) => [s.key, pp?.[s.key] ? String(pp[s.key]) : ''])
+      ) as Record<string, string>,
+      pizza_max_flavors: Object.fromEntries(
+        PIZZA_SIZES.map((s) => [s.key, pmf?.[s.key] ? String(pmf[s.key]) : ''])
+      ) as Record<string, string>,
     });
     setImageFile(null); setImagePreview(p.image_url || null);
     setProductDialog(true);
@@ -195,13 +197,26 @@ export function MenuPanel() {
     }
     setUploading(true);
     try {
-      const pizzaPricesData = isCatPizza ? {
-        small: form.pizza_prices.small ? parseFloat(form.pizza_prices.small) : null,
-        medium: form.pizza_prices.medium ? parseFloat(form.pizza_prices.medium) : null,
-        large: form.pizza_prices.large ? parseFloat(form.pizza_prices.large) : null,
-        giant: form.pizza_prices.giant ? parseFloat(form.pizza_prices.giant) : null,
-        brutona: form.pizza_prices.brutona ? parseFloat(form.pizza_prices.brutona) : null,
-      } : null;
+      const pizzaPricesData = isCatPizza
+        ? Object.fromEntries(
+            PIZZA_SIZES.map((s) => [
+              s.key,
+              form.pizza_prices[s.key] && parseFloat(form.pizza_prices[s.key]) > 0
+                ? parseFloat(form.pizza_prices[s.key])
+                : null,
+            ])
+          )
+        : null;
+      const pizzaMaxFlavorsData = isCatPizza
+        ? Object.fromEntries(
+            PIZZA_SIZES.map((s) => [
+              s.key,
+              form.pizza_prices[s.key] && parseFloat(form.pizza_prices[s.key]) > 0
+                ? (form.pizza_max_flavors[s.key] ? parseInt(form.pizza_max_flavors[s.key]) : s.maxFlavors)
+                : null,
+            ])
+          )
+        : null;
       // For pizza, use smallest pizza price as the base price
       const basePrice = isCatPizza
         ? Math.min(...Object.values(form.pizza_prices).filter(v => v && parseFloat(v) > 0).map(v => parseFloat(v)))
@@ -215,6 +230,7 @@ export function MenuPanel() {
         cashback_active: form.hasCashback,
         cashback_percent: form.hasCashback && form.cashback_percent ? parseFloat(form.cashback_percent) : 0,
         pizza_prices: pizzaPricesData,
+        pizza_max_flavors: pizzaMaxFlavorsData,
       };
       if (editingProduct) {
         data.image_url = await uploadImage(editingProduct.id);
@@ -397,28 +413,59 @@ export function MenuPanel() {
             </div>
             {formIsPizza ? (
               <div className="space-y-3 rounded-lg border p-3">
-                <Label className="font-semibold">🍕 Preço por tamanho *</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Pequena</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 25.00" value={form.pizza_prices.small} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, small: e.target.value } })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Média</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 35.00" value={form.pizza_prices.medium} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, medium: e.target.value } })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Grande</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 45.00" value={form.pizza_prices.large} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, large: e.target.value } })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Gigante</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 55.00" value={form.pizza_prices.giant} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, giant: e.target.value } })} />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs flex items-center gap-1">💪 BRUTONA</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 75.00" value={form.pizza_prices.brutona} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, brutona: e.target.value } })} />
-                  </div>
+                <div>
+                  <Label className="font-semibold">🍕 Tamanhos disponíveis *</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Ative apenas os tamanhos que este item oferece e defina o preço e a quantidade de sabores.</p>
+                </div>
+                <div className="space-y-2">
+                  {PIZZA_SIZES.map((size) => {
+                    const enabled = !!form.pizza_prices[size.key];
+                    return (
+                      <div key={size.key} className="rounded-lg border p-2 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label className="text-sm font-medium">{size.label}</Label>
+                          <Switch
+                            checked={enabled}
+                            onCheckedChange={(v) =>
+                              setForm({
+                                ...form,
+                                pizza_prices: { ...form.pizza_prices, [size.key]: v ? form.pizza_prices[size.key] || '0' : '' },
+                                pizza_max_flavors: { ...form.pizza_max_flavors, [size.key]: v ? form.pizza_max_flavors[size.key] || String(size.maxFlavors) : '' },
+                              })
+                            }
+                          />
+                        </div>
+                        {enabled && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">Preço (R$)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="Ex: 45.00"
+                                value={form.pizza_prices[size.key]}
+                                onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, [size.key]: e.target.value } })}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Máx. sabores</Label>
+                              <Select
+                                value={form.pizza_max_flavors[size.key] || String(size.maxFlavors)}
+                                onValueChange={(v) => setForm({ ...form, pizza_max_flavors: { ...form.pizza_max_flavors, [size.key]: v } })}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {[1, 2, 3, 4].map((n) => (
+                                    <SelectItem key={n} value={String(n)}>{n} {n === 1 ? 'sabor' : 'sabores'}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (

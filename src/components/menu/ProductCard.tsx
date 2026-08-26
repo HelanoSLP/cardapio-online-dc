@@ -37,6 +37,11 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   const cashbackActive = (product as any).cashback_active as boolean;
   const cashbackPercent = (product as any).cashback_percent as number;
   const pizzaPrices = (product as any).pizza_prices as Record<string, number> | null;
+  const pizzaMaxFlavors = (product as any).pizza_max_flavors as Record<string, number> | null;
+  const availableSizes = useMemo(
+    () => PIZZA_SIZES.filter((s) => !pizzaPrices || (pizzaPrices[s.key] ?? 0) > 0),
+    [pizzaPrices]
+  );
   const displayPrice = hasPromo ? promoPrice : product.price;
 
   const smallestPizzaPrice = useMemo(() => {
@@ -75,7 +80,9 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
       : comboDetectedSize;
 
   const maxFlavors = effectiveSize
-    ? PIZZA_SIZES.find((s) => s.key === effectiveSize)?.maxFlavors || 1
+    ? (pizzaMaxFlavors?.[effectiveSize] ??
+        PIZZA_SIZES.find((s) => s.key === effectiveSize)?.maxFlavors ??
+        1)
     : 1;
 
   const pizzaCategoryIds = useMemo(
@@ -115,7 +122,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   });
 
   const showSizeSelector = isPizza || comboNeedsSizeSelection;
-  const showFlavorSelector = ((isPizza || comboHasPizza) && effectiveSize && flavorProducts && flavorProducts.length > 1);
+  const showFlavorSelector = ((isPizza || comboHasPizza) && effectiveSize && maxFlavors > 1 && flavorProducts && flavorProducts.length > 1);
 
   const handleOpen = () => {
     setOpen(true);
@@ -345,8 +352,9 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
               <div className="grid grid-cols-2 gap-2">
-                {PIZZA_SIZES.map((size) => {
+                {availableSizes.map((size) => {
                   const sPrice = pizzaPrices && pizzaPrices[size.key] ? pizzaPrices[size.key] : null;
+                  const sMaxFlavors = pizzaMaxFlavors?.[size.key] ?? size.maxFlavors;
                   return (
                     <button
                       key={size.key}
@@ -369,7 +377,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                       {sPrice != null && (
                         <span className="block text-xs font-bold">{formatPrice(sPrice)}</span>
                       )}
-                      <span className="block text-xs opacity-70">até {size.maxFlavors} sabores</span>
+                      <span className="block text-xs opacity-70">até {sMaxFlavors} {sMaxFlavors === 1 ? 'sabor' : 'sabores'}</span>
                     </button>
                   );
                 })}
