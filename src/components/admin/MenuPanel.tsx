@@ -133,7 +133,7 @@ export function MenuPanel() {
   // ── Product functions ──
   const openNew = () => {
     setEditingProduct(null);
-    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } });
+    setForm({ name: '', description: '', price: '', category_id: categories[0]?.id || '', ingredients: '', active: true, image_url: null, hasPromo: false, promo_price: '', hasCashback: false, cashback_percent: '', pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' }, pizza_max_flavors: { small: '', medium: '', large: '', giant: '', brutona: '' } });
     setImageFile(null); setImagePreview(null);
     setProductDialog(true);
   };
@@ -142,19 +142,19 @@ export function MenuPanel() {
     setEditingProduct(p);
     const promoPrice = (p as any).promo_price;
     const pp = (p as any).pizza_prices as Record<string, number> | null;
+    const pmf = (p as any).pizza_max_flavors as Record<string, number> | null;
     setForm({
       name: p.name, description: p.description || '', price: String(p.price),
       category_id: p.category_id, ingredients: p.ingredients?.join(', ') || '', active: p.active, image_url: p.image_url,
       hasPromo: promoPrice != null && promoPrice > 0, promo_price: promoPrice ? String(promoPrice) : '',
       hasCashback: (p as any).cashback_active ?? false,
       cashback_percent: (p as any).cashback_percent ? String((p as any).cashback_percent) : '',
-      pizza_prices: {
-        small: pp?.small ? String(pp.small) : '',
-        medium: pp?.medium ? String(pp.medium) : '',
-        large: pp?.large ? String(pp.large) : '',
-        giant: pp?.giant ? String(pp.giant) : '',
-        brutona: pp?.brutona ? String(pp.brutona) : '',
-      },
+      pizza_prices: Object.fromEntries(
+        PIZZA_SIZES.map((s) => [s.key, pp?.[s.key] ? String(pp[s.key]) : ''])
+      ) as Record<string, string>,
+      pizza_max_flavors: Object.fromEntries(
+        PIZZA_SIZES.map((s) => [s.key, pmf?.[s.key] ? String(pmf[s.key]) : ''])
+      ) as Record<string, string>,
     });
     setImageFile(null); setImagePreview(p.image_url || null);
     setProductDialog(true);
