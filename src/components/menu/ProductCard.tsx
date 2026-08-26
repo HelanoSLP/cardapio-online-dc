@@ -122,7 +122,7 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   });
 
   const showSizeSelector = isPizza || comboNeedsSizeSelection;
-  const showFlavorSelector = ((isPizza || comboHasPizza) && effectiveSize && flavorProducts && flavorProducts.length > 1);
+  const showFlavorSelector = ((isPizza || comboHasPizza) && effectiveSize && maxFlavors > 1 && flavorProducts && flavorProducts.length > 1);
 
   const handleOpen = () => {
     setOpen(true);
