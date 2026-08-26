@@ -352,8 +352,9 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
             <div>
               <p className="text-sm font-medium mb-2">Tamanho:</p>
               <div className="grid grid-cols-2 gap-2">
-                {PIZZA_SIZES.map((size) => {
+                {availableSizes.map((size) => {
                   const sPrice = pizzaPrices && pizzaPrices[size.key] ? pizzaPrices[size.key] : null;
+                  const sMaxFlavors = pizzaMaxFlavors?.[size.key] ?? size.maxFlavors;
                   return (
                     <button
                       key={size.key}
@@ -376,7 +377,10 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                       {sPrice != null && (
                         <span className="block text-xs font-bold">{formatPrice(sPrice)}</span>
                       )}
-                      <span className="block text-xs opacity-70">até {size.maxFlavors} sabores</span>
+                      <span className="block text-xs opacity-70">até {sMaxFlavors} {sMaxFlavors === 1 ? 'sabor' : 'sabores'}</span>
+                    </button>
+                  );
+                })}
                     </button>
                   );
                 })}
