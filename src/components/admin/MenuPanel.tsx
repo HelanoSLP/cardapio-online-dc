@@ -412,28 +412,59 @@ export function MenuPanel() {
             </div>
             {formIsPizza ? (
               <div className="space-y-3 rounded-lg border p-3">
-                <Label className="font-semibold">🍕 Preço por tamanho *</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Pequena</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 25.00" value={form.pizza_prices.small} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, small: e.target.value } })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Média</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 35.00" value={form.pizza_prices.medium} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, medium: e.target.value } })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Grande</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 45.00" value={form.pizza_prices.large} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, large: e.target.value } })} />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Gigante</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 55.00" value={form.pizza_prices.giant} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, giant: e.target.value } })} />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs flex items-center gap-1">💪 BRUTONA</Label>
-                    <Input type="number" step="0.01" placeholder="Ex: 75.00" value={form.pizza_prices.brutona} onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, brutona: e.target.value } })} />
-                  </div>
+                <div>
+                  <Label className="font-semibold">🍕 Tamanhos disponíveis *</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">Ative apenas os tamanhos que este item oferece e defina o preço e a quantidade de sabores.</p>
+                </div>
+                <div className="space-y-2">
+                  {PIZZA_SIZES.map((size) => {
+                    const enabled = !!form.pizza_prices[size.key];
+                    return (
+                      <div key={size.key} className="rounded-lg border p-2 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label className="text-sm font-medium">{size.label}</Label>
+                          <Switch
+                            checked={enabled}
+                            onCheckedChange={(v) =>
+                              setForm({
+                                ...form,
+                                pizza_prices: { ...form.pizza_prices, [size.key]: v ? form.pizza_prices[size.key] || '0' : '' },
+                                pizza_max_flavors: { ...form.pizza_max_flavors, [size.key]: v ? form.pizza_max_flavors[size.key] || String(size.maxFlavors) : '' },
+                              })
+                            }
+                          />
+                        </div>
+                        {enabled && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">Preço (R$)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="Ex: 45.00"
+                                value={form.pizza_prices[size.key]}
+                                onChange={(e) => setForm({ ...form, pizza_prices: { ...form.pizza_prices, [size.key]: e.target.value } })}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Máx. sabores</Label>
+                              <Select
+                                value={form.pizza_max_flavors[size.key] || String(size.maxFlavors)}
+                                onValueChange={(v) => setForm({ ...form, pizza_max_flavors: { ...form.pizza_max_flavors, [size.key]: v } })}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {[1, 2, 3, 4].map((n) => (
+                                    <SelectItem key={n} value={String(n)}>{n} {n === 1 ? 'sabor' : 'sabores'}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
