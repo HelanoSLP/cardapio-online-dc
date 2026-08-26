@@ -37,6 +37,11 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
   const cashbackActive = (product as any).cashback_active as boolean;
   const cashbackPercent = (product as any).cashback_percent as number;
   const pizzaPrices = (product as any).pizza_prices as Record<string, number> | null;
+  const pizzaMaxFlavors = (product as any).pizza_max_flavors as Record<string, number> | null;
+  const availableSizes = useMemo(
+    () => PIZZA_SIZES.filter((s) => !pizzaPrices || (pizzaPrices[s.key] ?? 0) > 0),
+    [pizzaPrices]
+  );
   const displayPrice = hasPromo ? promoPrice : product.price;
 
   const smallestPizzaPrice = useMemo(() => {
