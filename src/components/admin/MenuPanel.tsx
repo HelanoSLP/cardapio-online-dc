@@ -32,6 +32,7 @@ export function MenuPanel() {
     hasPromo: false, promo_price: '',
     hasCashback: false, cashback_percent: '',
     pizza_prices: { small: '', medium: '', large: '', giant: '', brutona: '' } as Record<string, string>,
+    pizza_max_flavors: { small: '', medium: '', large: '', giant: '', brutona: '' } as Record<string, string>,
   });
 
   // Category dialog state
