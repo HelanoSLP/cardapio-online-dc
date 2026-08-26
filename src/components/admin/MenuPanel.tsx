@@ -9,10 +9,14 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExtraIngredientsPanel } from './ExtraIngredientsPanel';
 import { PIZZA_SIZES } from '@/hooks/useMenu';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type Category = Tables<'categories'> & { parent_id?: string | null };
 type Product = Tables<'products'> & { cashback_active?: boolean; cashback_percent?: number };
