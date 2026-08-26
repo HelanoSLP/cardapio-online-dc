@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { ExtraIngredientsPanel } from './ExtraIngredientsPanel';
+import { PIZZA_SIZES } from '@/hooks/useMenu';
 
 type Category = Tables<'categories'> & { parent_id?: string | null };
 type Product = Tables<'products'> & { cashback_active?: boolean; cashback_percent?: number };
