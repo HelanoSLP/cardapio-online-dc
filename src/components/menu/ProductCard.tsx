@@ -381,9 +381,6 @@ export function ProductCard({ product, categories, isFavorite, onToggleFavorite 
                     </button>
                   );
                 })}
-                    </button>
-                  );
-                })}
               </div>
             </div>
           )}
