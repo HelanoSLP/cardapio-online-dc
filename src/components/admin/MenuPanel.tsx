@@ -128,6 +128,13 @@ export function MenuPanel() {
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+    const activeProduct = products.find((p) => p.id === active.id);
+    const overProduct = products.find((p) => p.id === over.id);
+    if (!activeProduct || !overProduct) return;
+    if (activeProduct.category_id !== overProduct.category_id) {
+      toast.error('Mova o item apenas dentro da mesma categoria');
+      return;
+    }
     const oldIndex = products.findIndex((p) => p.id === active.id);
     const newIndex = products.findIndex((p) => p.id === over.id);
     if (oldIndex < 0 || newIndex < 0) return;
