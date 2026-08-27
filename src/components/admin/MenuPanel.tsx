@@ -119,6 +119,34 @@ export function MenuPanel() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = products.findIndex((p) => p.id === active.id);
+    const newIndex = products.findIndex((p) => p.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    const reordered = arrayMove(products, oldIndex, newIndex);
+    setProducts(reordered);
+    const updates = reordered.map((p, i) =>
+      supabase.from('products').update({ sort_order: i }).eq('id', p.id),
+    );
+    const results = await Promise.all(updates);
+    if (results.some((r) => r.error)) {
+      toast.error('Erro ao salvar a ordem');
+      fetchData();
+    } else {
+      toast.success('Ordem atualizada');
+    }
+  };
+
+
+
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
 
