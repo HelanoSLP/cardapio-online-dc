@@ -302,37 +302,30 @@ export function MenuPanel() {
             <h2 className="text-lg font-bold">Produtos ({products.length})</h2>
             <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" /> Novo Produto</Button>
           </div>
-          <div className="space-y-2">
-            {products.map((p) => (
-              <div key={p.id} className={`flex items-center gap-3 rounded-lg border p-3 ${!p.active ? 'opacity-50' : ''}`}>
-                {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} className="h-10 w-10 rounded-md object-cover flex-shrink-0" />
-                ) : (
-                  <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                    <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm truncate">{p.name}</p>
-                    {(p as any).cashback_active && (
-                      <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
-                        💰 {(p as any).cashback_percent}%
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{getCategoryName(p.category_id)} • {formatPrice(p.price)}</p>
-                </div>
-                <Switch checked={p.active} onCheckedChange={() => toggleActive(p)} />
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
-                  <Pencil className="h-3 w-3" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+          <p className="text-xs text-muted-foreground mb-2">Pressione e segure no ícone <GripVertical className="h-3 w-3 inline" /> para arrastar e reordenar.</p>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext items={products.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-2 relative">
+                {products.map((p) => (
+                  <SortableProductRow
+                    key={p.id}
+                    product={p}
+                    categoryName={getCategoryName(p.category_id)}
+                    priceLabel={formatPrice(p.price)}
+                    onToggle={() => toggleActive(p)}
+                    onEdit={() => openEdit(p)}
+                    onDelete={() => handleDelete(p.id)}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
+
         </TabsContent>
 
         {/* ── Categories Tab ── */}
