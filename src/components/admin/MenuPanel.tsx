@@ -405,21 +405,51 @@ export function MenuPanel() {
             modifiers={[restrictToVerticalAxis, restrictToParentElement]}
             onDragEnd={handleDragEnd}
           >
-            <SortableContext items={products.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2 relative">
-                {products.map((p) => (
-                  <SortableProductRow
-                    key={p.id}
-                    product={p}
-                    categoryName={getCategoryName(p.category_id)}
-                    priceLabel={formatPrice(p.price)}
-                    onToggle={() => toggleActive(p)}
-                    onEdit={() => openEdit(p)}
-                    onDelete={() => handleDelete(p.id)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
+            {(() => {
+              // Group products by category, keeping parent categories and their subcategories in order
+              const orderedCats: { cat: Category; parent?: Category }[] = [];
+              for (const cat of parentCategories) {
+                const children = getChildCategories(cat.id).sort((a, b) => a.sort_order - b.sort_order);
+                if (children.length > 0) {
+                  for (const sub of children) orderedCats.push({ cat: sub, parent: cat });
+                } else {
+                  orderedCats.push({ cat });
+                }
+              }
+              const groups = orderedCats
+                .map(({ cat, parent }) => ({
+                  cat,
+                  parent,
+                  items: products.filter((p) => p.category_id === cat.id),
+                }))
+                .filter((g) => g.items.length > 0);
+              return groups.map((group) => (
+                <div key={group.cat.id} className="mb-6">
+                  <div className="flex items-center gap-2 mb-2 sticky top-0 bg-background/95 backdrop-blur py-2 z-10 border-b">
+                    <span className="text-lg">{group.parent?.icon || group.cat.icon || '📁'}</span>
+                    <h3 className="font-bold text-sm uppercase tracking-wide">
+                      {group.parent ? `${group.parent.name} • ${group.cat.name}` : group.cat.name}
+                    </h3>
+                    <span className="text-xs text-muted-foreground">({group.items.length})</span>
+                  </div>
+                  <SortableContext items={group.items.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-2 relative">
+                      {group.items.map((p) => (
+                        <SortableProductRow
+                          key={p.id}
+                          product={p}
+                          categoryName={getCategoryName(p.category_id)}
+                          priceLabel={formatPrice(p.price)}
+                          onToggle={() => toggleActive(p)}
+                          onEdit={() => openEdit(p)}
+                          onDelete={() => handleDelete(p.id)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </div>
+              ));
+            })()}
           </DndContext>
 
         </TabsContent>
