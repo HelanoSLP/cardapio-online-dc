@@ -21,6 +21,67 @@ import { CSS } from '@dnd-kit/utilities';
 type Category = Tables<'categories'> & { parent_id?: string | null };
 type Product = Tables<'products'> & { cashback_active?: boolean; cashback_percent?: number };
 
+function SortableProductRow({
+  product: p,
+  categoryName,
+  priceLabel,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  product: Product;
+  categoryName: string;
+  priceLabel: string;
+  onToggle: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-center gap-2 rounded-lg border p-3 bg-card ${!p.active ? 'opacity-50' : ''} ${isDragging ? 'shadow-lg z-10 relative' : ''}`}
+    >
+      <button
+        type="button"
+        className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground p-1"
+        {...attributes}
+        {...listeners}
+        aria-label="Arrastar para reordenar"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      {p.image_url ? (
+        <img src={p.image_url} alt={p.name} className="h-10 w-10 rounded-md object-cover flex-shrink-0" />
+      ) : (
+        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+          <ImagePlus className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="font-medium text-sm truncate">{p.name}</p>
+          {(p as any).cashback_active && (
+            <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-semibold whitespace-nowrap">
+              💰 {(p as any).cashback_percent}%
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">{categoryName} • {priceLabel}</p>
+      </div>
+      <Switch checked={p.active} onCheckedChange={onToggle} />
+      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
+        <Pencil className="h-3 w-3" />
+      </Button>
+      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={onDelete}>
+        <Trash2 className="h-3 w-3" />
+      </Button>
+    </div>
+  );
+}
+
+
 export function MenuPanel() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
