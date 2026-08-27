@@ -623,7 +623,7 @@ export function MenuPanel() {
                   <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {leafCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                      {renderCategoryOptions()}
                     </SelectContent>
                   </Select>
                 </div>
@@ -635,7 +635,7 @@ export function MenuPanel() {
                 <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {leafCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                    {renderCategoryOptions()}
                   </SelectContent>
                 </Select>
               </div>
