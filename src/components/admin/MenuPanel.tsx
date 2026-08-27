@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Pencil, Trash2, ImagePlus, X, FolderTree, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
@@ -366,6 +366,27 @@ export function MenuPanel() {
 
   const leafCategories = categories.filter((c) => !categories.some((child) => child.parent_id === c.id));
 
+  // Group leaf categories under their parent for the product form select
+  const categoryGroups: { parent: Category | null; items: Category[] }[] = [];
+  for (const parent of parentCategories) {
+    const children = getChildCategories(parent.id).filter((c) => leafCategories.some((l) => l.id === c.id));
+    if (children.length > 0) categoryGroups.push({ parent, items: children });
+  }
+  const standaloneLeaves = leafCategories.filter((c) => !c.parent_id);
+  if (standaloneLeaves.length > 0) categoryGroups.push({ parent: null, items: standaloneLeaves });
+
+  const renderCategoryOptions = () =>
+    categoryGroups.map((g) =>
+      g.parent ? (
+        <SelectGroup key={g.parent.id}>
+          <SelectLabel>{g.parent.icon} {g.parent.name}</SelectLabel>
+          {g.items.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+        </SelectGroup>
+      ) : (
+        g.items.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)
+      )
+    );
+
   const isCategoryPizza = (catId: string) => {
     const cat = categories.find((c) => c.id === catId);
     if (!cat) return false;
@@ -602,7 +623,7 @@ export function MenuPanel() {
                   <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {leafCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                      {renderCategoryOptions()}
                     </SelectContent>
                   </Select>
                 </div>
@@ -614,7 +635,7 @@ export function MenuPanel() {
                 <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {leafCategories.map((c) => <SelectItem key={c.id} value={c.id}>{c.icon} {c.name}</SelectItem>)}
+                    {renderCategoryOptions()}
                   </SelectContent>
                 </Select>
               </div>
