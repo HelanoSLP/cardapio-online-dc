@@ -254,7 +254,7 @@ export function MenuPanel() {
         PIZZA_SIZES.map((s) => [s.key, pp?.[s.key] ? String(pp[s.key]) : ''])
       ) as Record<string, string>,
       pizza_max_flavors: Object.fromEntries(
-        PIZZA_SIZES.map((s) => [s.key, pmf?.[s.key] ? String(pmf[s.key]) : ''])
+        PIZZA_SIZES.map((s) => [s.key, pmf?.[s.key] ? String(pmf[s.key]) : (pp?.[s.key] ? String(s.maxFlavors) : '')])
       ) as Record<string, string>,
     });
     setImageFile(null); setImagePreview(p.image_url || null);
@@ -563,7 +563,7 @@ export function MenuPanel() {
                 </div>
                 <div className="space-y-2">
                   {PIZZA_SIZES.map((size) => {
-                    const enabled = !!form.pizza_prices[size.key];
+                    const enabled = !!form.pizza_max_flavors[size.key];
                     return (
                       <div key={size.key} className="rounded-lg border p-2 space-y-2">
                         <div className="flex items-center justify-between gap-2">
