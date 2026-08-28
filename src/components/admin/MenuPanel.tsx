@@ -254,7 +254,7 @@ export function MenuPanel() {
         PIZZA_SIZES.map((s) => [s.key, pp?.[s.key] ? String(pp[s.key]) : ''])
       ) as Record<string, string>,
       pizza_max_flavors: Object.fromEntries(
-        PIZZA_SIZES.map((s) => [s.key, pmf?.[s.key] ? String(pmf[s.key]) : ''])
+        PIZZA_SIZES.map((s) => [s.key, pmf?.[s.key] ? String(pmf[s.key]) : (pp?.[s.key] ? String(s.maxFlavors) : '')])
       ) as Record<string, string>,
     });
     setImageFile(null); setImagePreview(p.image_url || null);
