@@ -563,7 +563,7 @@ export function MenuPanel() {
                 </div>
                 <div className="space-y-2">
                   {PIZZA_SIZES.map((size) => {
-                    const enabled = !!form.pizza_prices[size.key];
+                    const enabled = !!form.pizza_max_flavors[size.key];
                     return (
                       <div key={size.key} className="rounded-lg border p-2 space-y-2">
                         <div className="flex items-center justify-between gap-2">
